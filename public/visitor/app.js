@@ -65,12 +65,23 @@
   function eventCard(ev){const image=flyerUrl(ev);return `<button class="event-tile" data-event="${esc(ev.id)}">${image?`<img src="${image}" alt="${esc(ev.name)} フライヤー" loading="lazy">`:`<div style="aspect-ratio:4/3;background:#e8e9ec;display:grid;place-items:center"><img src="../TMPlogo.png" style="width:35%;height:35%;object-fit:contain" alt=""></div>`}<div class="tile-copy"><strong>${esc(ev.name)}</strong><small>${esc(dateLabel(ev.date))}</small></div></button>`;}
   function setPage(next){page=next;document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));render();window.scrollTo({top:0,behavior:'smooth'});}
   function headerTitle(title,sub=''){return `<div class="eyebrow">TSUKUBA MUSIC PROJECT</div><h1 class="page-title">${esc(title)}</h1>${sub?`<p class="lead">${esc(sub)}</p>`:''}`;}
+  function updateHeaderNowNext(){
+    const host=document.getElementById('headerNow');
+    if(!host)return;
+    const ev=selected();
+    if(!ev||page==='select'){host.hidden=true;host.innerHTML='';return;}
+    const st=statusFor(ev), current=st.current?.a||null, next=st.next?.a||null;
+    const currentHtml=current?`<span class="header-now-current"><i class="live-dot"></i>NOW <b>${esc(actNames(ev,current))}</b></span>`:'';
+    const nextHtml=next?`<span class="header-now-next">NEXT <b>${esc(actNames(ev,next))}</b></span>`:'';
+    host.hidden=false;
+    host.innerHTML=currentHtml+nextHtml||'<span class="header-now-soon">COMING SOON...</span>';
+  }
   function renderEventSelect(){
     const upcoming=activeEvents();
     const next=upcoming.find(e=>(e.date||'')>=localDate(new Date())) || null;
     const nextAct=next?actsFor(next).find(a=>actRange(next,a).start):null;
     const nextTime=next?`${dateLabel(next.date)}${nextAct?` · ${String(nextAct.start||'').slice(0,5)} 開始`:''}`:'次回開催は調整中';
-    app.innerHTML=`<section class="next-event-banner"><div class="eyebrow">NEXT EVENT</div><strong>${esc(nextTime)}</strong>${next?`<span>${esc(next.name)}</span>`:''}</section>${headerTitle('イベントを選択','横にスワイプして、参加するイベントを選んでください。')}<div class="event-carousel" aria-label="イベント一覧">${upcoming.length?upcoming.map(ev=>`<button class="event-select-card" data-select-event="${esc(ev.id)}">${flyerUrl(ev)?`<img src="${flyerUrl(ev)}" alt="${esc(ev.name)} フライヤー">`:`<div class="event-select-placeholder"><img src="../TMPlogo.png" alt=""></div>`}<div class="event-select-copy"><div>${statusPill(ev)}</div><strong>${esc(ev.name)}</strong><small>${esc(dateLabel(ev.date))}${ev.venue?` · ${esc(ev.venue)}`:''}</small><span>イベントを開く　›</span></div></button>`).join(''):`<div class="empty"><strong>公開中のイベントはありません</strong>次回のtonight!をお楽しみに。</div>`}</div>${archivedEvents().length?`<div class="section-head"><h2>過去のイベント</h2><button data-page="archive">アーカイブを見る</button></div>`:''}<div class="footer">TONIGHT! · TSUKUBA MUSIC PROJECT</div>`;
+    app.innerHTML=`<section class="next-event-banner"><div class="eyebrow">NEXT EVENT</div><strong>${esc(nextTime)}</strong>${next?`<span>${esc(next.name)}</span>`:''}</section><div class="event-carousel" aria-label="イベント一覧">${upcoming.length?upcoming.map(ev=>`<button class="event-select-card" data-select-event="${esc(ev.id)}">${flyerUrl(ev)?`<img src="${flyerUrl(ev)}" alt="${esc(ev.name)} フライヤー">`:`<div class="event-select-placeholder"><img src="../TMPlogo.png" alt=""></div>`}<div class="event-select-copy"><div>${statusPill(ev)}</div><strong>${esc(ev.name)}</strong><small>${esc(dateLabel(ev.date))}${ev.venue?` · ${esc(ev.venue)}`:''}</small><span>イベントを開く　›</span></div></button>`).join(''):`<div class="empty"><strong>公開中のイベントはありません</strong>次回のtonight!をお楽しみに。</div>`}</div>${archivedEvents().length?`<div class="section-head"><h2>過去のイベント</h2><button data-page="archive">アーカイブを見る</button></div>`:''}<div class="footer">TONIGHT! · TSUKUBA MUSIC PROJECT</div>`;
   }
   function renderHome(){
     const ev=selected(); if(!ev){page='select';renderEventSelect();return;} const upcoming=activeEvents().filter(e=>(e.date||'')>=localDate(new Date()));
@@ -81,10 +92,10 @@
   }
   function renderSchedule(){
     const ev=selected();if(!ev){app.innerHTML=headerTitle('タイムテーブル')+'<div class="empty"><strong>イベントがありません</strong>開催情報が公開されると、ここに表示されます。</div>';return;}
-    const acts=actsFor(ev), st=statusFor(ev);
+    const acts=actsFor(ev).filter(a=>{const r=actRange(ev,a);return Boolean(r.start&&r.end);}), st=statusFor(ev);
     const timeline=renderScheduleTimeline(ev,acts);
     const cards=acts.map(a=>{const r=actRange(ev,a),isNow=r.start&&r.end&&new Date()>=r.start&&new Date()<r.end;return `<button class="act ${isNow?'is-now':''}" data-act="${esc(a.id)}"><div class="act-time">${esc(timeText(ev,a))}<small>${esc(a.startDate&&a.startDate!==ev.date?a.startDate:'')}</small></div><div class="act-info"><span class="act-type">${esc(a.type==='その他'?(a.customType||'その他'):(a.type||'DJ'))}${isNow?' · NOW':''}</span><strong>${esc(actNames(ev,a))}</strong><p>出演者プロフィールを見る　›</p></div></button>`;}).join('');
-    app.innerHTML=`${headerTitle('タイムテーブル',`${ev.name} · ${dateLabel(ev.date)}`)}<div class="event-meta">${statusPill(ev)}<span class="pill">${acts.length} STAGES / SETS</span></div>${acts.length?`<section class="timeline-visual-card"><div class="timeline-visual-heading"><strong>LIVE TIMELINE</strong><span>現在時刻に合わせて自動更新</span></div>${timeline}</section><div class="timeline-list-heading">出演スケジュール</div><div class="timeline">${cards}</div>`:`<div class="empty"><strong>タイムテーブルは未公開です</strong>公開され次第、こちらに表示されます。</div>`}<p class="notice">出演時間は運営の更新により変更される場合があります。</p>`;
+    app.innerHTML=`${headerTitle('タイムテーブル',`${ev.name} · ${dateLabel(ev.date)}`)}<div class="event-meta">${statusPill(ev)}<span class="pill">${acts.length} STAGES / SETS</span></div>${acts.length?`<section class="timeline-visual-card"><div class="timeline-visual-heading"><strong>LIVE TIMELINE</strong><span>現在時刻に合わせて自動更新</span></div>${timeline}</section><div class="timeline-list-heading">出演スケジュール</div><div class="timeline">${cards}</div>`:`<div class="empty coming-soon"><strong>COMING SOON...</strong><span>タイムテーブルは近日公開予定です。</span></div>`}<p class="notice">出演時間は運営の更新により変更される場合があります。</p>`;
   }
   function renderScheduleTimeline(ev,acts){
     if(!acts.length)return '';
@@ -127,12 +138,13 @@
   function renderNowNext(ev){
     const st=statusFor(ev);
     const line=(label,item)=>item?`<div class="now-item"><div><small>${label} · ${esc(timeText(ev,item))}</small><strong>${esc(actNames(ev,item))}</strong></div><span class="act-type">${esc(item.type||'DJ')}</span></div>`:'';
-    return `<section class="now-panel"><div class="now-top"><span><i class="live-dot"></i>NOW / NEXT</span><span>${esc(st.label)}</span></div>${line('NOW',st.current)}${line('NEXT',st.next)}${!st.current&&!st.next?'<p class="notice" style="color:#bbb">タイムテーブルは公開後に表示されます。</p>':''}</section>`;
+    const hasSchedule=actsFor(ev).length>0;
+    return `<section class="now-panel"><div class="now-top"><span><i class="live-dot"></i>NOW / NEXT</span><span>${esc(st.label)}</span></div>${hasSchedule?(line('NOW',st.current)+line('NEXT',st.next)||'<p class="coming-soon-inline">COMING SOON...</p>'):'<p class="coming-soon-inline">COMING SOON...</p>'}</section>`;
   }
   function renderEventDetail(ev){
     const image=flyerUrl(ev), status=rsvpStatus(ev.id);
     const choice=(value,label,desc)=>`<button type="button" class="rsvp-choice ${status===value?'is-selected':''}" data-rsvp-choice="${value}"><strong>${label}</strong><small>${desc}</small></button>`;
-    app.innerHTML=`${image?`<img src="${image}" alt="${esc(ev.name)}" class="detail-flyer">`:''}${headerTitle(ev.name,dateLabel(ev.date))}<div class="event-meta">${statusPill(ev)}${ev.venue?`<span class="pill">${esc(ev.venue)}</span>`:''}</div>${ev.description?`<div class="card"><p class="event-description">${esc(ev.description)}</p></div>`:''}${renderNowNext(ev)}<section class="card rsvp-gate"><div class="eyebrow">YOUR PLAN</div><h2 class="card-heading">今夜、会場で会いましょう。</h2><p class="rsvp-intro">参加予定をシェアして、みんなでイベントを楽しもう。</p><label class="rsvp-name-label" for="rsvpName">表示名（参加・興味ありの場合に公開）</label><input id="rsvpName" maxlength="30" placeholder="ニックネームを入力" value="${esc(localStorage.getItem('tonight_visitor_display_name')||'')}"><div class="rsvp-choice-grid">${choice('going','参加','行く予定！')}${choice('interested','興味あり','気になっている')}${choice('not-going','不参加','今回は参加しない')}</div><button class="btn secondary rsvp-cancel" id="rsvpCancel" ${status?'':'hidden'}>参加表明を取り消す</button><div class="rsvp-summary"><div id="rsvpCount" class="rsvp-count-grid"><span>読み込み中…</span></div><div id="rsvpParticipants" class="rsvp-participants"></div></div><div class="rsvp-actions"><button class="btn secondary" id="eventShare">↗ 友達にシェア</button><button class="btn secondary" id="calendarAdd">＋ カレンダーに追加</button><button class="btn secondary" id="noticeBtn">通知を設定</button></div><p class="rsvp-privacy">「参加」「興味あり」の名前のみ公開されます。不参加は人数・名前ともに公開されません。</p></section><div class="detail-shortcuts"><button class="quick" data-goto="schedule"><span>▤</span>タイムテーブル</button><button class="quick" data-goto="profiles"><span>♙</span>出演者</button><button class="quick" data-goto="drinks"><span>◉</span>ドリンク</button><button class="quick" data-goto="photos"><span>▧</span>フォト</button></div>`;
+    app.innerHTML=`${image?`<img src="${image}" alt="${esc(ev.name)}" class="detail-flyer">`:''}${headerTitle(ev.name,dateLabel(ev.date))}<div class="event-meta">${statusPill(ev)}${ev.venue?`<span class="pill">${esc(ev.venue)}</span>`:''}</div>${ev.description?`<div class="card"><p class="event-description">${esc(ev.description)}</p></div>`:''}<section class="card rsvp-gate"><div class="eyebrow">YOUR PLAN</div><h2 class="card-heading">今夜、会場で会いましょう。</h2><p class="rsvp-intro">参加予定をシェアして、みんなでイベントを楽しもう。</p><label class="rsvp-name-label" for="rsvpName">表示名（参加・興味ありの場合に公開）</label><input id="rsvpName" maxlength="30" placeholder="ニックネームを入力" value="${esc(localStorage.getItem('tonight_visitor_display_name')||'')}"><div class="rsvp-choice-grid">${choice('going','参加','行く予定！')}${choice('interested','興味あり','気になっている')}${choice('not-going','不参加','今回は参加しない')}</div><button class="btn secondary rsvp-cancel" id="rsvpCancel" ${status?'':'hidden'}>参加表明を取り消す</button><div class="rsvp-summary"><div id="rsvpCount" class="rsvp-count-grid"><span>読み込み中…</span></div><div id="rsvpParticipants" class="rsvp-participants"></div></div><div class="rsvp-actions"><button class="btn secondary" id="eventShare">↗ 友達にシェア</button><button class="btn secondary" id="calendarAdd">＋ カレンダーに追加</button><button class="btn secondary" id="noticeBtn">出演開始通知を設定</button></div><p class="rsvp-privacy">「参加」「興味あり」の名前のみ公開されます。不参加は人数・名前ともに公開されません。</p></section><div class="detail-shortcuts"><button class="quick" data-goto="schedule"><span>▤</span>タイムテーブル</button><button class="quick" data-goto="profiles"><span>♙</span>出演者</button><button class="quick" data-goto="drinks"><span>◉</span>ドリンク</button><button class="quick" data-goto="photos"><span>▧</span>フォト</button></div>`;
     refreshRsvpList(ev.id);
   }
   async function refreshRsvpList(eventId){
@@ -175,10 +187,11 @@
     const back=$('#backBtn'), nav=$('.bottom-nav'), hasEvent=Boolean(selectedId);
     back.hidden=page==='home'||page==='select';
     nav.hidden=page==='select'||!hasEvent;
-    if(page==='select'){renderEventSelect();return;}
-    if(!hasEvent||!selected()){page='select';renderEventSelect();return;}
-    if(page==='home'||page==='detail'){renderEventDetail(selected());return;}
+    if(page==='select'){renderEventSelect();updateHeaderNowNext();return;}
+    if(!hasEvent||!selected()){page='select';renderEventSelect();updateHeaderNowNext();return;}
+    if(page==='home'||page==='detail'){renderEventDetail(selected());updateHeaderNowNext();return;}
     ({schedule:renderSchedule,profiles:renderProfiles,drinks:renderDrinks,photos:renderPhotos,archive:renderArchive}[page]||renderEventDetail)(selected());
+    updateHeaderNowNext();
   }
   function openModal(html){modalRoot.innerHTML=`<div class="modal" data-dismiss="1"><div class="modal-box"><button class="modal-close" data-close aria-label="閉じる">×</button>${html}</div></div>`;}
   function performersFor(ev){
@@ -191,15 +204,16 @@
     const all=performersFor(ev);
     const categories=['DJ','LIVE','VJ','その他'];
     const categoryFor=act=>{const t=String(act.type==='その他'?(act.customType||'その他'):(act.type||'DJ')).toUpperCase();if(t.includes('DJ'))return 'DJ';if(t.includes('LIVE')||t.includes('BAND')||t.includes('ライブ'))return 'LIVE';if(t.includes('VJ'))return 'VJ';return 'その他';};
-    const renderCard=m=>`<article class="performer-profile-card">
+    const renderCard=m=>{const slots=actsFor(ev).filter(a=>(a.memberIds||[]).map(String).includes(String(m.id))).map(a=>({a,range:actRange(ev,a)})).filter(x=>x.range.start&&x.range.end);return `<article class="performer-profile-card">
       <div class="performer-profile-cover">${m.photo?`<img src="${esc(m.photo)}" alt="${esc(m.nickname||m.name)}" loading="lazy">`:`<div class="performer-profile-placeholder">tonight!</div>`}</div>
       <div class="performer-profile-body">
-        <div class="eyebrow">ARTIST</div><h2>${esc(m.nickname||m.name||'出演者')}</h2>
+        <h2>${esc(m.nickname||m.name||'出演者')}</h2>
+        ${slots.length?`<div class="profile-line profile-set-times"><b>出演時間</b><span>${slots.map(x=>`${esc(timeText(ev,x.a))}`).join('<br>')}</span></div>`:''}
         ${m.bio?`<p class="performer-bio">${esc(m.bio)}</p>`:''}
         ${m.genre?`<div class="profile-line"><b>GENRE</b><span>${esc(m.genre)}</span></div>`:''}
         ${m.favoriteArtists?`<div class="profile-line"><b>FAVORITE ARTISTS</b><span>${esc(m.favoriteArtists)}</span></div>`:''}
         <div class="profile-links">${m.instagram?`<a href="${esc(/^https:\/\//i.test(m.instagram)?m.instagram:`https://www.instagram.com/${m.instagram.replace(/^@/,'')}/`)}" target="_blank" rel="noopener">Instagram ↗</a>`:''}${m.spotifyPlaylist?`<a href="${esc(m.spotifyPlaylist)}" target="_blank" rel="noopener">Spotify Playlist ↗</a>`:''}</div>
-      </div></article>`;
+      </div></article>`;};
     const groups=categories.map(category=>{
       const ids=[...new Set(actsFor(ev).filter(a=>categoryFor(a)===category).flatMap(a=>(a.memberIds||[]).map(String)))];
       const members=ids.map(id=>all.find(m=>String(m.id)===id)).filter(Boolean);
@@ -231,8 +245,13 @@
   async function enableNotices(){
     if(!('Notification' in window)){alert('このブラウザは通知に対応していません。');return;}
     const permission=await Notification.requestPermission();
-    if(permission==='granted'){localStorage.setItem(NOTICE_KEY,'1');alert('開催通知を設定しました。アプリを開いている間に開催前のお知らせを表示します。');checkReminders();}
-    else alert('通知が許可されませんでした。ブラウザの設定から通知を許可できます。');
+    if(permission==='granted'){
+      localStorage.setItem(NOTICE_KEY,'1');
+      const ev=selected(), current=ev?statusFor(ev).current?.a:null;
+      if(ev)localStorage.setItem(`${NOTICE_KEY}_current_${ev.id}`,current?String(current.id):'');
+      alert('出演開始通知を設定しました。アプリを開いている間、出演開始をお知らせします。');
+      checkReminders();
+    } else alert('通知が許可されませんでした。ブラウザの設定から通知を許可できます。');
   }
   function checkReminders(){
     if(localStorage.getItem(NOTICE_KEY)!=='1'||!('Notification' in window)||Notification.permission!=='granted')return;
@@ -240,6 +259,18 @@
     const now=Date.now();
     for(const ev of activeEvents()){if(localDate(new Date(now))===ev.date&&!sent[ev.id]){new Notification('tonight!｜本日開催！',{body:`${ev.name} · ${dateLabel(ev.date)}`});sent[ev.id]=true;}}
     localStorage.setItem(NOTICE_KEY+'_sent',JSON.stringify(sent));
+  }
+  function checkNowPlayingNotice(){
+    if(localStorage.getItem(NOTICE_KEY)!=='1'||!('Notification' in window)||Notification.permission!=='granted')return;
+    const ev=selected();if(!ev)return;
+    const current=statusFor(ev).current?.a||null;
+    const key=`${NOTICE_KEY}_current_${ev.id}`;
+    const previous=localStorage.getItem(key);
+    const currentId=current?String(current.id):'';
+    if(previous!==null&&currentId&&previous!==currentId){
+      new Notification('tonight!｜NOW PLAYING',{body:`${actNames(ev,current)} がプレイ中です。`});
+    }
+    localStorage.setItem(key,currentId);
   }
   async function copyUrl(url){try{await navigator.clipboard.writeText(url);alert('リンクをコピーしました！');}catch{prompt('このリンクをコピーしてください',url);}}
   async function loadData(silent=false){
@@ -269,6 +300,6 @@
   });
   window.addEventListener('hashchange',()=>{const match=location.hash.match(/event=([^&]+)/);if(match){selectedId=decodeURIComponent(match[1]);if(data.events.some(e=>e.id===selectedId)){page='home';render();}}});
   const hash=location.hash.match(/event=([^&]+)/);if(hash){selectedId=decodeURIComponent(hash[1]);page='home';}
-  loadData();refreshTimer=setInterval(()=>{loadData(true);checkReminders();if(page==='schedule')renderSchedule();if(page==='home'){const panel=$('.now-panel');if(panel&&selected())panel.outerHTML=renderNowNext(selected());refreshRsvpList(selectedId);}},30000);
+  loadData();refreshTimer=setInterval(()=>{loadData(true);checkReminders();checkNowPlayingNotice();updateHeaderNowNext();if(page==='schedule')renderSchedule();if(page==='home')refreshRsvpList(selectedId);},30000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadData(true);});
 })();
