@@ -4074,7 +4074,7 @@ function nowHtml(tt, ev) {
   const actName = item => `${item.type === "その他" ? (item.customType || "その他") : (item.type || "DJ")}：${recordMemberDisplay(item)}`;
   const shiftName = item => `${item.role || "シフト"}：${recordMemberDisplay(item)}`;
   const renderEntries = (items, shifted) => items.map(item =>
-    `<span class="admin-pulse-entry"><strong>${esc(shifted ? shiftName(item) : actName(item))}</strong><small>${esc(scheduleRangeLabel(item, shifted))}</small></span>`
+    `<span class="admin-pulse-entry"><strong>${esc(shifted ? actName(item) : shiftName(item))}</strong><small>${esc(scheduleRangeLabel(item, shifted))}</small></span>`
   ).join("");
   const renderScheduleGroup = (acts, shifts) => {
     const actHtml = renderEntries(acts, true);

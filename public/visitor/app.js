@@ -85,12 +85,13 @@
     };
     const acts=actsFor(ev);
     const shifts=Array.isArray(ev.tt?.shifts)?ev.tt.shifts:[];
+    const actCategory=item=>item.type==='その他'?(item.customType||'その他'):(item.type||'DJ');
     const entries=[
-      ...findActive(acts).map(x=>({label:'NOW',kind:'出演',name:actNames(ev,x.item),time:timeText(ev,x.item)})),
+      ...findActive(acts).map(x=>({label:'NOW',kind:actCategory(x.item),name:actNames(ev,x.item),time:timeText(ev,x.item)})),
       ...findActive(shifts).map(x=>({label:'NOW',kind:'シフト',name:memberNames(x.item),time:timeText(ev,x.item)}))
     ];
     const upcoming=[
-      ...[findNext(acts)].filter(Boolean).map(x=>({label:'NEXT',kind:'出演',name:actNames(ev,x.item),time:timeText(ev,x.item),start:x.start})),
+      ...[findNext(acts)].filter(Boolean).map(x=>({label:'NEXT',kind:actCategory(x.item),name:actNames(ev,x.item),time:timeText(ev,x.item),start:x.start})),
       ...[findNext(shifts)].filter(Boolean).map(x=>({label:'NEXT',kind:'シフト',name:memberNames(x.item),time:timeText(ev,x.item),start:x.start}))
     ].sort((a,b)=>a.start-b.start);
     const render=(entry,cls)=>`<span class="${cls}"><i class="live-dot"></i><span class="header-now-copy"><small>${entry.label} · ${entry.kind} · ${esc(entry.time)}</small><b>${esc(entry.name)}</b></span></span>`;

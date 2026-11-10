@@ -441,3 +441,24 @@
 .bottom-nav .nav-icon svg{width:20px;height:20px}
 .quick .quick-icon svg,
 .bottom-nav .nav-icon svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+
+/* v27: visitor timeline cards use the same light, readable treatment as admin */
+.visitor-timeline-block,
+.visitor-timeline-block.is-live{
+  background:#fff;
+  color:#171717;
+  border:1px solid #e5e8ef;
+  box-shadow:0 2px 8px rgba(20,35,55,.07);
+}
+.visitor-timeline-block small{color:#68758b}
+.visitor-timeline-block strong{color:#171717}
+.visitor-timeline-block span{color:#70717a}
+.visitor-timeline-block.is-live{
+  background:#eef4ff;
+  border-color:#9bb7df;
+  box-shadow:0 3px 12px rgba(65,94,140,.14);
+}
+.visitor-timeline-block.is-live small,
+.visitor-timeline-block.is-live strong{color:#171717}
+.visitor-timeline-block.is-live span{color:#526f9c}
