@@ -74,23 +74,18 @@
     const findActive=(items)=>items.map(item=>({item,...actRange(ev,item)}))
       .filter(x=>x.start&&x.end&&now>=x.start&&now<x.end)
       .sort((a,b)=>a.start-b.start);
-    const memberNames=(item)=>{
-      const byId=new Map((ev.members||[]).map(m=>[String(m.id),m]));
-      const ids=Array.isArray(item.memberIds)?item.memberIds:[];
-      const names=ids.map(id=>{const m=byId.get(String(id));return m?(m.nickname||m.name):'';}).filter(Boolean);
-      return names.join('、')||String(item.name||item.role||'担当未設定');
-    };
     const acts=actsFor(ev);
-    const shifts=Array.isArray(ev.tt?.shifts)?ev.tt.shifts:[];
     const actCategory=item=>item.type==='その他'?(item.customType||'その他'):(item.type||'DJ');
-    const entries=[
-      ...findActive(acts).map(x=>({label:'NOW',kind:actCategory(x.item),name:actNames(ev,x.item),time:timeText(ev,x.item)})),
-      ...findActive(shifts).map(x=>({label:'NOW',kind:'シフト',name:memberNames(x.item),time:timeText(ev,x.item)}))
-    ];
+    const entries=findActive(acts).map(x=>({
+      label:'NOW',
+      kind:actCategory(x.item),
+      name:actNames(ev,x.item),
+      time:timeText(ev,x.item)
+    }));
     const render=(entry,cls)=>`<span class="${cls}"><i class="live-dot"></i><span class="header-now-copy"><small>${entry.label} · ${entry.kind} · ${esc(entry.time)}</small><b>${esc(entry.name)}</b></span></span>`;
     const currentHtml=entries.map(x=>render(x,'header-now-current')).join('');
     host.hidden=false;
-    host.innerHTML=currentHtml||'<span class="header-now-soon">現在出演・シフトはありません</span>';
+    host.innerHTML=currentHtml||'<span class="header-now-soon">現在出演者はいません</span>';
   }
   function renderEventSelect(){
     const upcoming=activeEvents();

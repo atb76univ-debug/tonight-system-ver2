@@ -462,3 +462,5 @@
 .visitor-timeline-block.is-live small,
 .visitor-timeline-block.is-live strong{color:#171717}
 .visitor-timeline-block.is-live span{color:#526f9c}
+
+.language-toggle{border:1px solid #dfe3e8;background:#fff;color:#333;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:850;line-height:1;white-space:nowrap;flex:0 0 auto}

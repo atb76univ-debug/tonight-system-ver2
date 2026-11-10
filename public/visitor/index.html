@@ -17,7 +17,7 @@
     <button id="backBtn" class="back-btn" type="button" aria-label="戻る" hidden>‹</button>
     <a class="brand" href="#home" aria-label="tonight! ホーム"><img src="../TMPlogo.png" alt="TSUKUBA MUSIC PROJECT"><span>tonight!</span></a>
     <div id="headerNow" class="header-now" hidden aria-live="polite"></div>
-    <div class="top-actions"><button class="event-switch-top" id="eventSwitchTop" type="button">イベント選択</button><button class="share-top" id="shareBtn" type="button" aria-label="共有">↗</button></div>
+    <div class="top-actions"><button type="button" id="languageToggle" class="language-toggle" aria-label="Switch to English">EN</button><button class="event-switch-top" id="eventSwitchTop" type="button">イベント選択</button><button class="share-top" id="shareBtn" type="button" aria-label="共有">↗</button></div>
   </header>
   <main id="app" aria-live="polite"><div class="loading"><img src="../TMPlogo.png" alt=""><p>イベント情報を読み込んでいます…</p></div></main>
   <nav class="bottom-nav" aria-label="メインメニュー">
@@ -29,7 +29,8 @@
     <button data-page="archive"><span>◷</span><small>アーカイブ</small></button>
   </nav>
   <div id="modalRoot"></div>
-  <script src="app.js?v=visitor-current-only-header-v28"></script>
+  <script src="../i18n.js?v=language-switch-v30"></script>
+  <script src="app.js?v=visitor-performers-only-v30"></script>
   <script>if('serviceWorker' in navigator) addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script>
 </body>
 </html>

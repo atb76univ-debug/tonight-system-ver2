@@ -4065,29 +4065,20 @@ function nowHtml(tt, ev) {
     const [start, end] = shifted ? actSlotRange(item) : slotRange(item);
     return t >= start && t < end;
   }).sort((x,y) => (shifted ? actSlotRange(x)[0] : slotRange(x)[0]) - (shifted ? actSlotRange(y)[0] : slotRange(y)[0]));
-  const next = (list, shifted=false) => list.filter(item => (shifted ? actSlotRange(item) : slotRange(item))[0] > t)
-    .sort((x,y) => (shifted ? actSlotRange(x)[0] : slotRange(x)[0]) - (shifted ? actSlotRange(y)[0] : slotRange(y)[0]))[0];
   const actNow = current(tt.acts || [], true);
-  const actNext = next(tt.acts || [], true);
   const shiftNow = current(tt.shifts || []);
-  const shiftNext = next(tt.shifts || []);
   const actName = item => `${item.type === "その他" ? (item.customType || "その他") : (item.type || "DJ")}：${recordMemberDisplay(item)}`;
   const shiftName = item => `${item.role || "シフト"}：${recordMemberDisplay(item)}`;
   const renderEntries = (items, shifted) => items.map(item =>
     `<span class="admin-pulse-entry"><strong>${esc(shifted ? actName(item) : shiftName(item))}</strong><small>${esc(scheduleRangeLabel(item, shifted))}</small></span>`
   ).join("");
-  const renderScheduleGroup = (acts, shifts) => {
-    const actHtml = renderEntries(acts, true);
-    const shiftHtml = renderEntries(shifts, false);
-    if (!actHtml && !shiftHtml) return `<span class="admin-pulse-empty">予定なし</span>`;
-    return `${actHtml}${actHtml && shiftHtml ? '<span class="admin-pulse-divider" aria-hidden="true"></span>' : ''}${shiftHtml}`;
-  };
-  const nowHtmlContent = renderScheduleGroup(actNow, shiftNow);
-  const nextHtmlContent = renderScheduleGroup(actNext ? [actNext] : [], shiftNext ? [shiftNext] : []);
-  const hasSchedule = (tt.acts||[]).length || (tt.shifts||[]).length;
+  const actHtml = renderEntries(actNow, true);
+  const shiftHtml = renderEntries(shiftNow, false);
+  const currentHtml = `${actHtml}${actHtml && shiftHtml ? '<span class="admin-pulse-divider" aria-hidden="true"></span>' : ''}${shiftHtml}`;
+  const status = t < 0 ? "開催前" : (t > 30*60 ? "開催終了" : "LIVE");
   return `<div class="admin-header-pulse">
-    <span class="admin-pulse-status"><i class="live-orb"></i>${t < 0 ? "開催前" : (t > 30*60 ? "開催終了" : "LIVE")}</span>
-    ${hasSchedule ? `<span class="admin-pulse-group">${nowHtmlContent}</span><span class="admin-pulse-divider"></span><span class="admin-pulse-group">${nextHtmlContent}</span>` : `<strong class="admin-pulse-coming">COMING SOON...</strong>`}
+    <span class="admin-pulse-status"><i class="live-orb"></i>${status}</span>
+    ${currentHtml || `<span class="admin-pulse-empty">現在の出演・シフトなし</span>`}
   </div>`;
 }
 function updateNow(options = {}) {
