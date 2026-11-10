@@ -3648,3 +3648,29 @@ select:disabled { cursor: not-allowed; opacity: .65; }
  .admin-header-pulse{width:100%;justify-content:center;flex-wrap:wrap;padding:7px 10px}
  .admin-pulse-entry strong{max-width:125px}
 }
+
+/* v13: center the admin NOW / NEXT pill within the header */
+.topbar{position:sticky}
+.event-pulse{
+  position:absolute!important;
+  left:50%!important;
+  right:auto!important;
+  top:50%!important;
+  transform:translate(-50%,-50%)!important;
+  margin:0!important;
+  width:max-content!important;
+  max-width:min(58vw,680px)!important;
+  flex:initial!important;
+}
+@media(max-width:760px){
+  .topbar{position:sticky}
+  .event-pulse{
+    position:relative!important;
+    left:auto!important;right:auto!important;top:auto!important;
+    transform:none!important;
+    margin:4px auto 0!important;
+    width:100%!important;max-width:100%!important;
+    flex:1 0 100%!important;
+    order:10;
+  }
+}

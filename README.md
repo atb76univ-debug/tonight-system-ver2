@@ -1,13 +1,9 @@
-# tonight! App v12
+# tonight! App v13
 
-## Visitor
-- Removed floating/bobbing animation from the next-event pill on the event-selection page.
-- The green status light now softly pulses; the pill itself remains stationary.
-
-## Admin
-- NOW / NEXT pill is placed inside the top header rather than below/overlapping it.
-- On narrow screens, it wraps to a second row that remains part of the header.
-- Removed floating/bobbing animation and applied the pulse animation to the green status light only.
+## Admin header
+- NOW / NEXT pill is centered horizontally in the admin header on desktop.
+- On narrow screens it remains centered in its own second row inside the header.
+- Visitor app and Worker are unchanged.
 
 ## Deploy
-Replace the project files with this package and deploy using the existing Cloudflare configuration.
+Replace `public/style.css` and `public/index.html` in the existing Cloudflare project and deploy.
