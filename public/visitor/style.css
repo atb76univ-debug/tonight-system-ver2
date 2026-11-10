@@ -156,3 +156,80 @@
   0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(53,209,124,.38)}
   50%{opacity:.62;box-shadow:0 0 0 6px rgba(53,209,124,0)}
 }
+
+
+/* v14: centered swipe carousels for event selection and performer profiles */
+.event-carousel{
+  display:flex!important;
+  align-items:stretch;
+  gap:16px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding:8px max(8vw, calc((100% - 520px)/2)) 24px!important;
+  scroll-snap-type:x mandatory;
+  scroll-padding-inline:50%;
+  scroll-behavior:smooth;
+  -webkit-overflow-scrolling:touch;
+}
+.event-carousel .event-select-card{
+  flex:0 0 min(84vw,520px)!important;
+  width:min(84vw,520px);
+  scroll-snap-align:center!important;
+  scroll-snap-stop:always;
+  transform:none;
+}
+.event-carousel .event-select-card:hover{
+  transform:none;
+}
+.profile-category{min-width:0;overflow:hidden}
+.profile-category .performer-profile-grid{
+  display:flex!important;
+  align-items:stretch;
+  gap:16px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding:8px max(8vw, calc((100% - 780px)/2)) 24px!important;
+  margin-inline:-8px;
+  scroll-snap-type:x mandatory;
+  scroll-padding-inline:50%;
+  scroll-behavior:smooth;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-inline:contain;
+}
+.profile-category .performer-profile-grid::-webkit-scrollbar,
+.event-carousel::-webkit-scrollbar{height:5px}
+.profile-category .performer-profile-grid::-webkit-scrollbar-thumb,
+.event-carousel::-webkit-scrollbar-thumb{background:#c9cbd0;border-radius:99px}
+.profile-category .performer-profile-card{
+  flex:0 0 min(84vw,780px)!important;
+  width:min(84vw,780px);
+  scroll-snap-align:center!important;
+  scroll-snap-stop:always;
+}
+.select-next-event .header-next-label{
+  display:inline-flex!important;
+  align-items:center;
+  gap:7px;
+}
+.select-next-event .live-dot,
+.now-panel .now-top .live-dot{
+  width:8px!important;
+  height:8px!important;
+  min-width:8px;
+  margin:0 1px 0 0!important;
+  display:inline-block!important;
+  flex:0 0 8px;
+  background:#35d17c!important;
+  border-radius:50%!important;
+  box-shadow:0 0 0 0 rgba(53,209,124,.42);
+  animation:green-dot-pulse 1.8s ease-in-out infinite!important;
+}
+@media(max-width:600px){
+  .event-carousel{gap:12px;padding-inline:8vw!important}
+  .event-carousel .event-select-card{flex-basis:84vw!important;width:84vw}
+  .profile-category .performer-profile-grid{gap:12px;padding-inline:8vw!important}
+  .profile-category .performer-profile-card{flex-basis:84vw!important;width:84vw;grid-template-columns:1fr}
+  .profile-category .performer-profile-cover,
+  .profile-category .performer-profile-cover img,
+  .profile-category .performer-profile-placeholder{min-height:0;height:auto;aspect-ratio:16/10}
+}
