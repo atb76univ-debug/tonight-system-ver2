@@ -3129,8 +3129,7 @@ function renderMemberProfileEdit() {
           <h3>SNS・音楽</h3>
           <div class="profile-form-grid">
             <label class="form-row profile-form-wide"><span>Instagram</span><input id="profileInstagram" value="${esc(member.instagram || "")}" placeholder="URL または @ユーザー名"></label>
-            <label class="form-row"><span>好きな音楽ジャンル</span><textarea id="profileGenre" rows="3" placeholder="例：House、Hip-Hop、Jazz">${esc(member.genre || "")}</textarea></label>
-            <label class="form-row"><span>好きなアーティスト</span><textarea id="profileFavoriteArtists" rows="3" placeholder="例：Artist A、Artist B">${esc(member.favoriteArtists || "")}</textarea></label>
+            <label class="form-row profile-form-wide"><span>Favorite（好きな音楽・アーティスト）</span><textarea id="profileFavorite" rows="3" placeholder="例：House、Hip-Hop、KID FRESINO、STUTS">${esc(member.favorite || [member.genre, member.favoriteArtists].filter(Boolean).join("、"))}</textarea></label>
             <label class="form-row profile-form-wide"><span>SpotifyプレイリストURL</span><input id="profileSpotify" type="url" value="${esc(member.spotifyPlaylist || "")}" placeholder="https://open.spotify.com/playlist/..."></label>
           </div>
         </section>
@@ -3169,8 +3168,8 @@ function renderMemberProfileEdit() {
     member.nickname = document.getElementById("profileNickname").value.trim();
     member.photo = photoUrl;
     member.instagram = instagram;
-    member.genre = document.getElementById("profileGenre").value.trim();
-    member.favoriteArtists = document.getElementById("profileFavoriteArtists").value.trim();
+    member.favorite = document.getElementById("profileFavorite").value.trim();
+    // 旧データとの互換性を保つため、既存の個別項目も空にせず保持する。
     member.spotifyPlaylist = spotify;
     member.bio = document.getElementById("profileBio").value.trim();
     db.membersUpdated = Date.now();

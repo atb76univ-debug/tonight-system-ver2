@@ -419,3 +419,15 @@
  .header-now-copy b{font-size:10px;max-width:110px}
  .header-now-next{display:inline-flex!important}
 }
+
+
+/* v21: clearer drink and photo pictograms */
+.quick-grid .quick span,
+.bottom-nav button span{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
+}
+.quick-grid .quick span{font-size:23px}
+.bottom-nav button span{font-size:19px}
