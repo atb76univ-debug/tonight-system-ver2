@@ -1,6 +1,6 @@
 {
-  "name": "tonight!",
-  "short_name": "tonight!",
+  "name": "tonight! 管理",
+  "short_name": "管理用",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

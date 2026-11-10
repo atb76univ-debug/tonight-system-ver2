@@ -1,13 +1,21 @@
 {
-  "name": "tonight! | Visitor",
-  "short_name": "tonight!",
+  "name": "tonight! 来場者",
+  "short_name": "来場者",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f5f5f7",
   "theme_color": "#f5f5f7",
   "icons": [
-    { "src": "../icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "../icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "../icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "../icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }

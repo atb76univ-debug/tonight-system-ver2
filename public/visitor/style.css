@@ -431,3 +431,13 @@
 }
 .quick-grid .quick span{font-size:23px}
 .bottom-nav button span{font-size:19px}
+
+/* Consistent outline icons for drinks and photo navigation */
+.quick .quick-icon,
+.bottom-nav .nav-icon{display:flex;align-items:center;justify-content:center}
+.quick .quick-icon{margin:0 auto 6px;height:22px}
+.quick .quick-icon svg{width:22px;height:22px}
+.bottom-nav .nav-icon{height:21px}
+.bottom-nav .nav-icon svg{width:20px;height:20px}
+.quick .quick-icon svg,
+.bottom-nav .nav-icon svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
