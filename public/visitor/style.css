@@ -118,3 +118,14 @@
 .profile-set-times{background:#f5f7fb;border-radius:10px;padding:10px 12px;margin:10px 0}
 .profile-set-times b{color:#4c5c75}
 @media(max-width:520px){.header-now{position:absolute;left:50%;top:calc(100% + 8px);transform:translateX(-50%);max-width:calc(100vw - 32px);z-index:25;padding:8px 13px;box-shadow:0 7px 22px rgba(0,0,0,.13);font-size:10px}.header-now strong{max-width:100px}.header-now-next{display:none}.topbar{position:sticky}}
+
+/* v10: next event date uses the same floating header treatment as NOW / NEXT */
+.header-next-event{display:flex;align-items:center;justify-content:center;gap:9px;max-width:min(58vw,620px);padding:9px 16px;border-radius:999px;background:rgba(255,255,255,.94);border:1px solid rgba(30,30,30,.07);box-shadow:0 5px 22px rgba(0,0,0,.10),0 0 0 5px rgba(255,255,255,.34);font-size:11px;white-space:nowrap;overflow:hidden;animation:header-now-float 3.8s ease-in-out infinite}
+.header-next-event[hidden]{display:none}
+.header-next-label{display:inline-flex;align-items:center;gap:6px;color:#16834b;font-size:10px;font-weight:900;letter-spacing:.04em}
+.header-next-event strong{color:#171717;font-weight:850}
+.header-next-name{color:#777;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+@media(max-width:520px){
+ .header-next-event{position:absolute;left:50%;top:calc(100% + 8px);transform:translateX(-50%);max-width:calc(100vw - 32px);z-index:25;padding:8px 13px;font-size:10px;box-shadow:0 7px 22px rgba(0,0,0,.13)}
+ .header-next-name{max-width:100px}
+}

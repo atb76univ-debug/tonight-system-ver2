@@ -1,16 +1,10 @@
-# tonight! Visitor App v8
+# tonight! App v10
 
-## Changes
-- Artist profile cards now show each linked performance slot's scheduled time.
-- Empty/unconfigured schedules show "COMING SOON..." in the timetable and floating NOW/NEXT header.
-- Removed the "イベントを選択" page title.
-- Removed all eyebrow labels/decorations globally.
-- Moved NOW/NEXT from the event page body into a softly floating header pill, refreshed on schedule polling.
-- Added current-performance browser notifications after visitors opt in. Notifications are generated while the app is open/active; this is not yet background Web Push.
-- Timetable only renders public performance entries with both start and end times; operational entries remain filtered.
-
-## Important about notifications
-True push delivery while the app is closed requires Web Push subscription storage, VAPID public/private keys configured as Cloudflare secrets, and a protected admin-side send action. This package does not claim that background push is enabled. The current implementation provides in-browser notifications while the visitor app is open.
+## Visitor app
+- The next scheduled event date/name is now displayed as a floating pill directly beneath/in the header, matching the visual treatment of the NOW / NEXT pill used inside event pages.
+- Removed the old full-width NEXT EVENT banner from the event-selection page.
+- The floating next-event pill appears only on the event-selection page and hides after selecting an event.
+- Responsive sizing for mobile and desktop.
 
 ## Deploy
-Replace `public/visitor/` in the existing Cloudflare project and deploy. `src/worker.js` is unchanged.
+Replace `public/visitor/` in the existing Cloudflare project and deploy. Admin files and Worker are unchanged.

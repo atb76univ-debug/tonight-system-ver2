@@ -4063,30 +4063,33 @@ function nowHtml(tt, ev) {
   const eventStart = new Date(ev.date + "T00:00:00").getTime();
   const t = (Date.now() - eventStart) / 60000;
   const current = (list, shifted=false) => list.filter(item => {
-    const [a, b] = shifted ? actSlotRange(item) : slotRange(item);
-    return t >= a && t < b;
-  }).sort((a,b) => slotRange(a)[0] - slotRange(b)[0]);
+    const [start, end] = shifted ? actSlotRange(item) : slotRange(item);
+    return t >= start && t < end;
+  }).sort((x,y) => (shifted ? actSlotRange(x)[0] : slotRange(x)[0]) - (shifted ? actSlotRange(y)[0] : slotRange(y)[0]));
   const next = (list, shifted=false) => list.filter(item => (shifted ? actSlotRange(item) : slotRange(item))[0] > t)
-    .sort((a,b) => (shifted ? actSlotRange(a) : slotRange(a))[0] - (shifted ? actSlotRange(b) : slotRange(b))[0])[0];
+    .sort((x,y) => (shifted ? actSlotRange(x)[0] : slotRange(x)[0]) - (shifted ? actSlotRange(y)[0] : slotRange(y)[0]))[0];
   const actNow = current(tt.acts || [], true);
   const actNext = next(tt.acts || [], true);
   const shiftNow = current(tt.shifts || []);
   const shiftNext = next(tt.shifts || []);
-  const eventState = t < 0 ? "開催前" : (t > 30 * 60 ? "開催終了" : "LIVE");
-  const actLabel = item => `${item.type === "その他" ? (item.customType || "その他") : (item.type || "DJ")}：${recordMemberDisplay(item)}`;
-  const showTime = item => scheduleRangeLabel(item,true);
-  let html = `<div class="schedule-status"><span class="live-orb"></span><span>${eventState}</span><small>${esc(ev.date)}</small></div>`;
-  html += `<div class="schedule-overview-grid">`;
-  html += `<div class="schedule-section"><div class="now-label">出番</div><div class="schedule-columns">`;
-  html += `<div class="schedule-column"><span class="schedule-tag current">NOW</span><div class="schedule-column-content">${actNow.length ? actNow.map(item => `<div class="schedule-item"><strong class="now-main">${esc(actLabel(item))}</strong><span class="sub-text">${esc(showTime(item))}</span></div>`).join("") : `<span class="sub-text">該当なし</span>`}</div></div>`;
-  html += `<div class="schedule-column"><span class="schedule-tag next">NEXT</span><div class="schedule-column-content">${actNext ? `<div class="schedule-item"><strong class="now-main">${esc(actLabel(actNext))}</strong><span class="sub-text">${esc(showTime(actNext))}</span></div>` : `<span class="sub-text">該当なし</span>`}</div></div>`;
-  html += `</div></div>`;
-  html += `<div class="schedule-section"><div class="now-label">シフト</div><div class="schedule-columns">`;
-  html += `<div class="schedule-column"><span class="schedule-tag current">NOW</span><div class="schedule-column-content">${shiftNow.length ? shiftNow.map(item => `<div class="schedule-item"><strong>${esc(item.role)}：${esc(recordMemberDisplay(item))}</strong><small>${esc(scheduleRangeLabel(item))}</small></div>`).join("") : `<span class="sub-text">該当なし</span>`}</div></div>`;
-  html += `<div class="schedule-column"><span class="schedule-tag next">NEXT</span><div class="schedule-column-content">${shiftNext ? `<div class="schedule-item"><strong>${esc(shiftNext.role)}：${esc(recordMemberDisplay(shiftNext))}</strong><small>${esc(scheduleRangeLabel(shiftNext))}</small></div>` : `<span class="sub-text">該当なし</span>`}</div></div>`;
-  html += `</div></div>`;
-  html += `</div>`;
-  return html;
+  const actName = item => `${item.type === "その他" ? (item.customType || "その他") : (item.type || "DJ")}：${recordMemberDisplay(item)}`;
+  const shiftName = item => `${item.role || "シフト"}：${recordMemberDisplay(item)}`;
+  const nowItems = [
+    ...actNow.map(item => ({kind:"出番",name:actName(item)})),
+    ...shiftNow.map(item => ({kind:"シフト",name:shiftName(item)}))
+  ];
+  const nextItems = [
+    ...(actNext ? [{kind:"出番",name:actName(actNext)}] : []),
+    ...(shiftNext ? [{kind:"シフト",name:shiftName(shiftNext)}] : [])
+  ];
+  const renderItems = (items, label) => items.length
+    ? items.map(item => `<span class="admin-pulse-entry"><small>${label} · ${item.kind}</small><strong>${esc(item.name)}</strong></span>`).join("")
+    : `<span class="admin-pulse-empty">${label === "NOW" ? "現在の出演・シフトなし" : "次の予定なし"}</span>`;
+  const hasSchedule = (tt.acts||[]).length || (tt.shifts||[]).length;
+  return `<div class="admin-header-pulse">
+    <span class="admin-pulse-status"><i class="live-orb"></i>${t < 0 ? "開催前" : (t > 30*60 ? "開催終了" : "LIVE")}</span>
+    ${hasSchedule ? `<span class="admin-pulse-group">${renderItems(nowItems,"NOW")}</span><span class="admin-pulse-divider"></span><span class="admin-pulse-group">${renderItems(nextItems,"NEXT")}</span>` : `<strong class="admin-pulse-coming">COMING SOON...</strong>`}
+  </div>`;
 }
 function updateNow(options = {}) {
   if (!ctx || !ctx.ev) return;

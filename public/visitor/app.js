@@ -65,6 +65,17 @@
   function eventCard(ev){const image=flyerUrl(ev);return `<button class="event-tile" data-event="${esc(ev.id)}">${image?`<img src="${image}" alt="${esc(ev.name)} フライヤー" loading="lazy">`:`<div style="aspect-ratio:4/3;background:#e8e9ec;display:grid;place-items:center"><img src="../TMPlogo.png" style="width:35%;height:35%;object-fit:contain" alt=""></div>`}<div class="tile-copy"><strong>${esc(ev.name)}</strong><small>${esc(dateLabel(ev.date))}</small></div></button>`;}
   function setPage(next){page=next;document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));render();window.scrollTo({top:0,behavior:'smooth'});}
   function headerTitle(title,sub=''){return `<div class="eyebrow">TSUKUBA MUSIC PROJECT</div><h1 class="page-title">${esc(title)}</h1>${sub?`<p class="lead">${esc(sub)}</p>`:''}`;}
+  function updateHeaderNextEvent(){
+    const host=document.getElementById('headerNextEvent');
+    if(!host)return;
+    if(page!=='select'){host.hidden=true;host.innerHTML='';return;}
+    const upcoming=activeEvents();
+    const next=upcoming.find(e=>(e.date||'')>=localDate(new Date()))||null;
+    host.hidden=false;
+    host.innerHTML=next
+      ? `<span class="header-next-label"><i class="live-dot"></i>NEXT EVENT</span><strong>${esc(dateLabel(next.date))}</strong><span class="header-next-name">${esc(next.name)}</span>`
+      : `<span class="header-next-label">NEXT EVENT</span><strong>次回開催は調整中</strong>`;
+  }
   function updateHeaderNowNext(){
     const host=document.getElementById('headerNow');
     if(!host)return;
@@ -79,9 +90,7 @@
   function renderEventSelect(){
     const upcoming=activeEvents();
     const next=upcoming.find(e=>(e.date||'')>=localDate(new Date())) || null;
-    const nextAct=next?actsFor(next).find(a=>actRange(next,a).start):null;
-    const nextTime=next?`${dateLabel(next.date)}${nextAct?` · ${String(nextAct.start||'').slice(0,5)} 開始`:''}`:'次回開催は調整中';
-    app.innerHTML=`<section class="next-event-banner"><div class="eyebrow">NEXT EVENT</div><strong>${esc(nextTime)}</strong>${next?`<span>${esc(next.name)}</span>`:''}</section><div class="event-carousel" aria-label="イベント一覧">${upcoming.length?upcoming.map(ev=>`<button class="event-select-card" data-select-event="${esc(ev.id)}">${flyerUrl(ev)?`<img src="${flyerUrl(ev)}" alt="${esc(ev.name)} フライヤー">`:`<div class="event-select-placeholder"><img src="../TMPlogo.png" alt=""></div>`}<div class="event-select-copy"><div>${statusPill(ev)}</div><strong>${esc(ev.name)}</strong><small>${esc(dateLabel(ev.date))}${ev.venue?` · ${esc(ev.venue)}`:''}</small><span>イベントを開く　›</span></div></button>`).join(''):`<div class="empty"><strong>公開中のイベントはありません</strong>次回のtonight!をお楽しみに。</div>`}</div>${archivedEvents().length?`<div class="section-head"><h2>過去のイベント</h2><button data-page="archive">アーカイブを見る</button></div>`:''}<div class="footer">TONIGHT! · TSUKUBA MUSIC PROJECT</div>`;
+    app.innerHTML=`<div class="event-carousel" aria-label="イベント一覧">${upcoming.length?upcoming.map(ev=>`<button class="event-select-card" data-select-event="${esc(ev.id)}">${flyerUrl(ev)?`<img src="${flyerUrl(ev)}" alt="${esc(ev.name)} フライヤー">`:`<div class="event-select-placeholder"><img src="../TMPlogo.png" alt=""></div>`}<div class="event-select-copy"><div>${statusPill(ev)}</div><strong>${esc(ev.name)}</strong><small>${esc(dateLabel(ev.date))}${ev.venue?` · ${esc(ev.venue)}`:''}</small><span>イベントを開く　›</span></div></button>`).join(''):`<div class="empty"><strong>公開中のイベントはありません</strong>次回のtonight!をお楽しみに。</div>`}</div>${archivedEvents().length?`<div class="section-head"><h2>過去のイベント</h2><button data-page="archive">アーカイブを見る</button></div>`:''}<div class="footer">TONIGHT! · TSUKUBA MUSIC PROJECT</div>`;
   }
   function renderHome(){
     const ev=selected(); if(!ev){page='select';renderEventSelect();return;} const upcoming=activeEvents().filter(e=>(e.date||'')>=localDate(new Date()));
@@ -187,11 +196,11 @@
     const back=$('#backBtn'), nav=$('.bottom-nav'), hasEvent=Boolean(selectedId);
     back.hidden=page==='home'||page==='select';
     nav.hidden=page==='select'||!hasEvent;
-    if(page==='select'){renderEventSelect();updateHeaderNowNext();return;}
-    if(!hasEvent||!selected()){page='select';renderEventSelect();updateHeaderNowNext();return;}
+    if(page==='select'){renderEventSelect();updateHeaderNowNext();updateHeaderNextEvent();return;}
+    if(!hasEvent||!selected()){page='select';renderEventSelect();updateHeaderNowNext();updateHeaderNextEvent();return;}
     if(page==='home'||page==='detail'){renderEventDetail(selected());updateHeaderNowNext();return;}
     ({schedule:renderSchedule,profiles:renderProfiles,drinks:renderDrinks,photos:renderPhotos,archive:renderArchive}[page]||renderEventDetail)(selected());
-    updateHeaderNowNext();
+    updateHeaderNowNext();updateHeaderNextEvent();
   }
   function openModal(html){modalRoot.innerHTML=`<div class="modal" data-dismiss="1"><div class="modal-box"><button class="modal-close" data-close aria-label="閉じる">×</button>${html}</div></div>`;}
   function performersFor(ev){
@@ -204,7 +213,7 @@
     const all=performersFor(ev);
     const categories=['DJ','LIVE','VJ','その他'];
     const categoryFor=act=>{const t=String(act.type==='その他'?(act.customType||'その他'):(act.type||'DJ')).toUpperCase();if(t.includes('DJ'))return 'DJ';if(t.includes('LIVE')||t.includes('BAND')||t.includes('ライブ'))return 'LIVE';if(t.includes('VJ'))return 'VJ';return 'その他';};
-    const renderCard=m=>{const slots=actsFor(ev).filter(a=>(a.memberIds||[]).map(String).includes(String(m.id))).map(a=>({a,range:actRange(ev,a)})).filter(x=>x.range.start&&x.range.end);return `<article class="performer-profile-card">
+    const renderCard=(m,category)=>{const slots=actsFor(ev).filter(a=>categoryFor(a)===category&&(a.memberIds||[]).map(String).includes(String(m.id))).map(a=>({a,range:actRange(ev,a)})).filter(x=>x.range.start&&x.range.end);return `<article class="performer-profile-card">
       <div class="performer-profile-cover">${m.photo?`<img src="${esc(m.photo)}" alt="${esc(m.nickname||m.name)}" loading="lazy">`:`<div class="performer-profile-placeholder">tonight!</div>`}</div>
       <div class="performer-profile-body">
         <h2>${esc(m.nickname||m.name||'出演者')}</h2>
@@ -218,7 +227,7 @@
       const ids=[...new Set(actsFor(ev).filter(a=>categoryFor(a)===category).flatMap(a=>(a.memberIds||[]).map(String)))];
       const members=ids.map(id=>all.find(m=>String(m.id)===id)).filter(Boolean);
       const filtered=profileFocusIds?.length?members.filter(m=>profileFocusIds.includes(String(m.id))):members;
-      return filtered.length?`<section class="profile-category"><div class="section-head"><h2>${category}</h2><span class="pill">${filtered.length}</span></div><div class="performer-profile-grid">${filtered.map(renderCard).join('')}</div></section>`:'';
+      return filtered.length?`<section class="profile-category"><div class="section-head"><h2>${category}</h2><span class="pill">${filtered.length}</span></div><div class="performer-profile-grid">${filtered.map(m=>renderCard(m,category)).join('')}</div></section>`:'';
     }).join('');
     app.innerHTML=`${headerTitle('出演者','カテゴリーごとに出演者のプロフィールをチェック。')}<div class="profile-event-label">${esc(ev.name)} · ${esc(dateLabel(ev.date))}</div>${groups||`<div class="empty"><strong>出演者プロフィールはまだありません</strong>プロフィールが登録されると、ここに表示されます。</div>`}`;
     profileFocusIds=null;
@@ -300,6 +309,6 @@
   });
   window.addEventListener('hashchange',()=>{const match=location.hash.match(/event=([^&]+)/);if(match){selectedId=decodeURIComponent(match[1]);if(data.events.some(e=>e.id===selectedId)){page='home';render();}}});
   const hash=location.hash.match(/event=([^&]+)/);if(hash){selectedId=decodeURIComponent(hash[1]);page='home';}
-  loadData();refreshTimer=setInterval(()=>{loadData(true);checkReminders();checkNowPlayingNotice();updateHeaderNowNext();if(page==='schedule')renderSchedule();if(page==='home')refreshRsvpList(selectedId);},30000);
+  loadData();refreshTimer=setInterval(()=>{loadData(true);checkReminders();checkNowPlayingNotice();updateHeaderNowNext();updateHeaderNextEvent();if(page==='schedule')renderSchedule();if(page==='home')refreshRsvpList(selectedId);},30000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadData(true);});
 })();
