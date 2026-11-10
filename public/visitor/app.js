@@ -4,7 +4,7 @@
   const app = $('#app'), modalRoot = $('#modalRoot');
   const RSVP_KEY = 'tonight_visitor_rsvp_v1';
   const NOTICE_KEY = 'tonight_visitor_notice_v1';
-  let data = {events:[],updated:0}, selectedId = null, page = 'select', lastPage = 'home';
+  let data = {events:[],updated:0}, selectedId = null, page = 'select', lastPage = 'home', profileFocusIds = null;
   const VISITOR_ID_KEY = 'tonight_visitor_id_v1';
   const visitorId = (() => { let id=localStorage.getItem(VISITOR_ID_KEY); if(!id){id=(crypto.randomUUID?crypto.randomUUID():`v_${Date.now()}_${Math.random().toString(36).slice(2)}`).replace(/[^A-Za-z0-9_-]/g,'');localStorage.setItem(VISITOR_ID_KEY,id);} return id; })();
   let refreshTimer = null;
@@ -119,11 +119,34 @@
     nav.hidden=page==='select'||!hasEvent;
     if(page==='select'){renderEventSelect();return;}
     if(page==='detail'){const ev=data.events.find(e=>e.id===selectedId);if(ev)renderEventDetail(ev);else{page='select';renderEventSelect();}return;}
-    ({home:renderHome,schedule:renderSchedule,drinks:renderDrinks,photos:renderPhotos,archive:renderArchive}[page]||renderHome)();
+    ({home:renderHome,schedule:renderSchedule,profiles:renderProfiles,drinks:renderDrinks,photos:renderPhotos,archive:renderArchive}[page]||renderHome)();
   }
   function openModal(html){modalRoot.innerHTML=`<div class="modal" data-dismiss="1"><div class="modal-box"><button class="modal-close" data-close aria-label="閉じる">×</button>${html}</div></div>`;}
-  function openAct(id){const ev=selected();const act=actsFor(ev).find(a=>String(a.id)===String(id));if(!act)return;const names=actNames(ev,act),members=(ev.members||[]).filter(m=>(act.memberIds||[]).map(String).includes(String(m.id)));
-    openModal(`<div class="eyebrow">${esc(act.type==='その他'?(act.customType||'OTHER'):(act.type||'DJ'))}</div><h2>${esc(names)}</h2><p>${esc(dateLabel(act.startDate||ev.date))} · ${esc(timeText(ev,act))}</p>${members.length?members.map(m=>`<article class="profile-card">${m.photo?`<img class="profile-photo" src="${esc(m.photo)}" alt="${esc(m.nickname||m.name)}">`:''}<div class="profile-content"><h3>${esc(m.nickname||m.name)}</h3>${m.bio?`<p>${esc(m.bio)}</p>`:''}${m.genre?`<div class="profile-line"><b>GENRE</b><span>${esc(m.genre)}</span></div>`:''}${m.favoriteArtists?`<div class="profile-line"><b>FAVORITE ARTISTS</b><span>${esc(m.favoriteArtists)}</span></div>`:''}<div class="profile-links">${m.instagram?`<a href="${esc(/^https:\/\//i.test(m.instagram)?m.instagram:`https://www.instagram.com/${m.instagram.replace(/^@/,'')}/`)}" target="_blank" rel="noopener">Instagram ↗</a>`:''}${m.spotifyPlaylist?`<a href="${esc(m.spotifyPlaylist)}" target="_blank" rel="noopener">Spotify Playlist ↗</a>`:''}</div></div></article>`).join(''):`<p>出演者プロフィールはまだ登録されていません。</p>`}`);
+  function performersFor(ev){
+    const ids=[...new Set(actsFor(ev).flatMap(a=>(Array.isArray(a.memberIds)?a.memberIds:[]).map(String)))];
+    const members=(ev?.members||[]);
+    return ids.map(id=>members.find(m=>String(m.id)===id)).filter(Boolean);
+  }
+  function renderProfiles(){
+    const ev=selected(); if(!ev){app.innerHTML=headerTitle('出演者');return;}
+    const all=performersFor(ev);
+    const list=profileFocusIds?.length?all.filter(m=>profileFocusIds.includes(String(m.id))):all;
+    const cards=list.map(m=>`<article class="performer-profile-card">
+      <div class="performer-profile-cover">${m.photo?`<img src="${esc(m.photo)}" alt="${esc(m.nickname||m.name)}" loading="lazy">`:`<div class="performer-profile-placeholder">tonight!</div>`}</div>
+      <div class="performer-profile-body">
+        <div class="eyebrow">ARTIST / DJ</div><h2>${esc(m.nickname||m.name||'出演者')}</h2>
+        ${m.bio?`<p class="performer-bio">${esc(m.bio)}</p>`:''}
+        ${m.genre?`<div class="profile-line"><b>GENRE</b><span>${esc(m.genre)}</span></div>`:''}
+        ${m.favoriteArtists?`<div class="profile-line"><b>FAVORITE ARTISTS</b><span>${esc(m.favoriteArtists)}</span></div>`:''}
+        <div class="profile-links">${m.instagram?`<a href="${esc(/^https:\/\//i.test(m.instagram)?m.instagram:`https://www.instagram.com/${m.instagram.replace(/^@/,'')}/`)}" target="_blank" rel="noopener">Instagram ↗</a>`:''}${m.spotifyPlaylist?`<a href="${esc(m.spotifyPlaylist)}" target="_blank" rel="noopener">Spotify Playlist ↗</a>`:''}</div>
+      </div></article>`).join('');
+    app.innerHTML=`${headerTitle('出演者','このイベントに出演するDJ・アーティストのプロフィール。')}<div class="profile-event-label">${esc(ev.name)} · ${esc(dateLabel(ev.date))}</div>${cards?`<div class="performer-profile-grid">${cards}</div>`:`<div class="empty"><strong>出演者プロフィールはまだありません</strong>プロフィールが登録されると、ここに表示されます。</div>`}`;
+    profileFocusIds=null;
+  }
+  function openAct(id){
+    const ev=selected(), act=actsFor(ev).find(a=>String(a.id)===String(id)); if(!act)return;
+    profileFocusIds=(act.memberIds||[]).map(String);
+    setPage('profiles');
   }
   async function share(){const ev=selected();const url=ev?`${location.origin}${location.pathname}#event=${encodeURIComponent(ev.id)}`:location.href;const title=ev?`tonight! | ${ev.name}`:'tonight! | TSUKUBA MUSIC PROJECT';const text=ev?`${ev.name} · ${dateLabel(ev.date)}`:'TSUKUBA MUSIC PROJECTのイベント情報';if(navigator.share){try{await navigator.share({title,text,url});}catch(e){if(e.name!=='AbortError')copyUrl(url);}}else copyUrl(url);}
   async function enableNotices(){

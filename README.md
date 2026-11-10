@@ -1,98 +1,17 @@
-# tonight! — 管理者用 / 来場者用
+# tonight! Visitor App v4
 
-TSUKUBA MUSIC PROJECT のイベント運営・来場者向けアプリです。
+## Updates
+- Performer details open as a dedicated full-page profile directory instead of a modal.
+- Added a persistent 「出演者」 tab to the bottom navigation.
+- Performer profiles are displayed as larger image-led cards with biography, genres, favorite artists, Instagram, and Spotify links.
+- Responsive profile card layout for desktop and mobile.
+- Updated visitor asset cache version.
 
-## アプリ
+## Deploy
+Replace the corresponding files in the existing Cloudflare project and deploy:
+- `public/visitor/index.html`
+- `public/visitor/app.js`
+- `public/visitor/style.css`
+- `public/visitor/sw.js`
 
-- 管理者用：`/`（既存アプリ。受付・会計・名簿・タイムテーブル等）
-- 来場者用：`/visitor/`（新規アプリ。イベント情報・NOW/NEXT・タイムテーブル・出演者・ドリンク・写真・アーカイブ・参加予定・共有）
-
-## ディレクトリ構成
-
-```text
-├─ package.json
-├─ wrangler.jsonc
-├─ src/
-│  └─ worker.js
-└─ public/
-   ├─ index.html                 # 管理者用
-   ├─ app.js                     # 管理者用
-   ├─ style.css                 # 管理者用
-   ├─ manifest.json
-   ├─ sw.js
-   ├─ TMPlogo.png
-   ├─ icon-192.png
-   ├─ icon-512.png
-   └─ visitor/
-      ├─ index.html              # 来場者用
-      ├─ app.js
-      ├─ style.css
-      ├─ manifest.json
-      └─ sw.js
-```
-
-## 来場者用アプリの機能
-
-- 公開イベント一覧・次回開催情報・イベント詳細
-- タイムテーブル、NOW/NEXTの自動表示
-- 出演者名・登録済みプロフィール情報の表示
-- ドリンクメニューと価格・売切れ表示
-- フライヤーおよび公開済みギャラリー画像の表示
-- 過去イベント・アーカイブ
-- イベントのSNS共有／リンク共有
-- 参加予定（現段階では利用端末内に保存。運営側の人数集計には送信しない）
-- 通知許可（アプリを開いている間、開催当日に通知。アプリを閉じた状態でのWeb Pushは未設定）
-
-## 公開API
-
-来場者用アプリは `GET /api/public/db` のみを使用します。Worker側でイベント名・開催日・フライヤーID・タイムテーブル・出演者に紐づく公開プロフィール項目・ドリンクメニュー等だけを抽出します。受付履歴、会計、売上、金庫、割引、参加者名簿全体、内部同期情報などは返しません。
-
-- `GET /api/public/db`：来場者用の読み取り専用データ
-- `GET /api/flyer/:id`：既存フライヤー画像
-- 管理者用の既存 `GET/PUT /api/db` は互換性維持のため変更していません。
-
-## 注意事項・未実装部分
-
-- 参加予定は現在この端末だけに保存され、管理者側の参加人数には反映されません。
-- 通知はアプリを開いている間のブラウザ通知です。アプリ終了中にも届くWeb PushにはVAPID鍵・Push購読保存・送信処理の追加が必要です。
-- 来場者交流掲示板は、投稿の荒らし対策・通報・削除・個人情報保護の仕組みを設計してから実装するため、今回の初版には含めていません。
-- 写真ギャラリーは `event.gallery` にHTTPS画像URLが登録された場合に表示します。現行管理画面にはギャラリー登録UIがないため、初期状態ではフライヤー画像のみ表示されます。
-- 既存メンバー名簿にプロフィール項目（自己紹介・ジャンル・Instagram）が未登録の場合、出演者名のみ表示します。
-- 来場者用の公開APIは読み取り専用ですが、既存管理API `/api/db` のPUTは従来どおり認証されていません。管理者用APIの保護にはCloudflare Access等の別途設定が必要です。アプリを分けただけで管理APIが安全になるわけではありません。
-
-## デプロイ
-
-リポジトリのルートに `public/` と `src/` を配置し、次を実行します。
-
-```bash
-npm install
-npm run deploy
-```
-
-Cloudflare Worker名 `tonight-system`、Durable Object `STORE`、Assets設定は維持してください。
-
-## 検証
-
-JavaScript構文チェックと公開APIのデータフィルタリングテストを実施してください。Cloudflare本番環境での実機同期・iOS通知・PWAインストールの確認はデプロイ後に必要です。
-
-
-## 来場者用アプリ v2（2026-11-10）
-
-- `/visitor/` を開くと最初にイベント選択画面を表示し、選択後にイベント専用ホームへ遷移します。ヘッダーの「イベント選択」からいつでも切り替えできます。
-- PC・タブレット・スマートフォンの幅に応じて、イベントカード・クイックメニュー・写真・ドリンクの列数を調整します。
-- 管理者用アプリの「メンバー名簿」→「編集」から、プロフィール写真URL、Instagram、好きなジャンル、好きなアーティスト、SpotifyプレイリストURL、自己紹介を登録できます。プロフィールは出演者名を選ぶと来場者用アプリに表示されます。
-- 参加表明はCloudflare Durable Objectsにイベント単位で保存し、同じイベントを開く全来場者が参加予定者名と人数を閲覧できます。登録・取消は専用の公開APIに限定し、既存の管理用 `/api/db` への書き込みは行いません。
-- 公開プロフィールとして配信する写真・Spotify URLはHTTPS URLのみ許可します。InstagramはURLまたはユーザー名を登録できます。
-
-### デプロイ
-既存の管理者用 `public/app.js`、`src/worker.js` と、`public/visitor/` を含むZIPを同じCloudflare Workerプロジェクトに配置して `npm run deploy` を実行してください。Workerを更新するため、来場者用だけを別Workerとしてデプロイしないでください。
-
-### 注意
-参加表明は表示名とブラウザごとの識別子で管理します。本人確認や不正登録防止の仕組みではないため、公開イベント向けの簡易参加表明です。プロフィール写真URL等は管理者が公開してよい情報のみ登録してください。
-
-## 出演者プロフィール編集ページ（v3）
-- 管理者用アプリのメンバー名簿にある「編集」から、ポップアップ／promptではなく独立した編集ページを開きます。
-- 基本情報、プロフィール写真URL（プレビュー付き）、Instagram、好きな音楽ジャンル、好きなアーティスト、SpotifyプレイリストURL、自己紹介をページ内でまとめて編集できます。
-- 保存すると既存のメンバー情報として同期され、来場者用アプリの出演者プロフィール表示に反映されます。
-- キャンセルまたは保存後はメンバー名簿へ戻ります。
-- 管理者用アプリのService Workerキャッシュを `tonight-v46` に更新しています。
+No Worker API changes are required for this UI update.
