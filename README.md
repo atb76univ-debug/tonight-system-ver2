@@ -1,10 +1,10 @@
-# tonight! App v10
+# tonight! App v11
 
-## Visitor app
-- The next scheduled event date/name is now displayed as a floating pill directly beneath/in the header, matching the visual treatment of the NOW / NEXT pill used inside event pages.
-- Removed the old full-width NEXT EVENT banner from the event-selection page.
-- The floating next-event pill appears only on the event-selection page and hides after selecting an event.
-- Responsive sizing for mobile and desktop.
+## Change
+- The NEXT EVENT floating pill is rendered inside the event-selection page content only, above the horizontal event carousel.
+- It is not rendered in the global site header.
+- It disappears naturally when a visitor opens an event.
+- The selected-event NOW / NEXT pill in the header remains unchanged.
 
 ## Deploy
-Replace `public/visitor/` in the existing Cloudflare project and deploy. Admin files and Worker are unchanged.
+Replace `public/visitor/` in the existing Cloudflare project and deploy.
