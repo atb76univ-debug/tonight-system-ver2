@@ -1,5 +1,5 @@
 {
-  "name": "tonight-system",
+  "name": "tonight-system-ver2",
   "main": "src/worker.js",
   "compatibility_date": "2025-01-01",
   "assets": {
