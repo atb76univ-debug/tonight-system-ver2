@@ -287,8 +287,8 @@
       const track=shell?.querySelector('.event-carousel,.performer-profile-grid');
       if(track){
         const card=track.querySelector('.event-select-card,.performer-profile-card');
-        const gap=parseFloat(getComputedStyle(track).columnGap)||16;
-        const step=card?card.getBoundingClientRect().width+gap:track.clientWidth*0.85;
+        const gap=parseFloat(getComputedStyle(track).columnGap)||0;
+        const step=card?card.getBoundingClientRect().width+gap:track.clientWidth;
         track.scrollBy({left:Number(carouselMove.dataset.carouselMove)*step,behavior:'smooth'});
       }
       return;
