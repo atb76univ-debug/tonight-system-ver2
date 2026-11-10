@@ -167,6 +167,7 @@ export class Store {
             id: String(member.id), name: String(member.name || ''), nickname: String(member.nickname || ''),
             bio: String(member.bio || member.profile || ''), instagram: String(member.instagram || ''),
             genre: String(member.genre || ''), favoriteArtists: String(member.favoriteArtists || ''),
+            favorite: String(member.favorite || ''),
             photo: /^https:\/\//i.test(String(member.photo || '')) ? String(member.photo) : '',
             spotifyPlaylist: /^https:\/\//i.test(String(member.spotifyPlaylist || '')) ? String(member.spotifyPlaylist) : ''
           }));
