@@ -402,3 +402,20 @@
 .select-next-event{
   animation:none!important;
 }
+
+
+/* v19: visitor header NOW/NEXT includes performance and shift time ranges */
+.header-now{gap:12px;white-space:normal;max-width:min(76vw,760px);animation:none!important}
+.header-now-current,.header-now-next{align-items:center;gap:7px;min-width:0}
+.header-now-current{border-right:1px solid #ddd;padding-right:12px}
+.header-now-next{border-left:0;padding-left:0}
+.header-now-copy{display:flex;flex-direction:column;gap:2px;min-width:0;line-height:1.25}
+.header-now-copy small{font-size:9px;font-weight:800;letter-spacing:.03em;color:#777}
+.header-now-copy b{font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:520px){
+ .header-now{max-width:calc(100vw - 20px);gap:8px;padding:8px 10px}
+ .header-now-current{padding-right:8px}
+ .header-now-copy small{font-size:8px}
+ .header-now-copy b{font-size:10px;max-width:110px}
+ .header-now-next{display:inline-flex!important}
+}

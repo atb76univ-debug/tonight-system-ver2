@@ -70,9 +70,32 @@
     if(!host)return;
     const ev=selected();
     if(!ev||page==='select'){host.hidden=true;host.innerHTML='';return;}
-    const st=statusFor(ev), current=st.current?.a||null, next=st.next?.a||null;
-    const currentHtml=current?`<span class="header-now-current"><i class="live-dot"></i>NOW <b>${esc(actNames(ev,current))}</b></span>`:'';
-    const nextHtml=next?`<span class="header-now-next"><i class="live-dot"></i>NEXT <b>${esc(actNames(ev,next))}</b></span>`:'';
+    const now=new Date();
+    const findActive=(items)=>items.map(item=>({item,...actRange(ev,item)}))
+      .filter(x=>x.start&&x.end&&now>=x.start&&now<x.end)
+      .sort((a,b)=>a.start-b.start);
+    const findNext=(items)=>items.map(item=>({item,...actRange(ev,item)}))
+      .filter(x=>x.start&&x.start>now)
+      .sort((a,b)=>a.start-b.start)[0]||null;
+    const memberNames=(item)=>{
+      const byId=new Map((ev.members||[]).map(m=>[String(m.id),m]));
+      const ids=Array.isArray(item.memberIds)?item.memberIds:[];
+      const names=ids.map(id=>{const m=byId.get(String(id));return m?(m.nickname||m.name):'';}).filter(Boolean);
+      return names.join('、')||String(item.name||item.role||'担当未設定');
+    };
+    const acts=actsFor(ev);
+    const shifts=Array.isArray(ev.tt?.shifts)?ev.tt.shifts:[];
+    const entries=[
+      ...findActive(acts).map(x=>({label:'NOW',kind:'出演',name:actNames(ev,x.item),time:timeText(ev,x.item)})),
+      ...findActive(shifts).map(x=>({label:'NOW',kind:'シフト',name:memberNames(x.item),time:timeText(ev,x.item)}))
+    ];
+    const upcoming=[
+      ...[findNext(acts)].filter(Boolean).map(x=>({label:'NEXT',kind:'出演',name:actNames(ev,x.item),time:timeText(ev,x.item),start:x.start})),
+      ...[findNext(shifts)].filter(Boolean).map(x=>({label:'NEXT',kind:'シフト',name:memberNames(x.item),time:timeText(ev,x.item),start:x.start}))
+    ].sort((a,b)=>a.start-b.start);
+    const render=(entry,cls)=>`<span class="${cls}"><i class="live-dot"></i><span class="header-now-copy"><small>${entry.label} · ${entry.kind} · ${esc(entry.time)}</small><b>${esc(entry.name)}</b></span></span>`;
+    const currentHtml=entries.map(x=>render(x,'header-now-current')).join('');
+    const nextHtml=upcoming.map(x=>render(x,'header-now-next')).join('');
     host.hidden=false;
     host.innerHTML=currentHtml+nextHtml||'<span class="header-now-soon">COMING SOON...</span>';
   }
