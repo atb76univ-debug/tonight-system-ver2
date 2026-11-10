@@ -4082,7 +4082,7 @@ function nowHtml(tt, ev) {
     ...(shiftNext ? [{kind:"シフト",name:shiftName(shiftNext),time:scheduleRangeLabel(shiftNext,false)}] : [])
   ];
   const renderItems = (items, label) => items.length
-    ? items.map(item => `<span class="admin-pulse-entry"><small>${label} · ${item.kind} · ${esc(item.time)}</small><strong>${esc(item.name)}</strong></span>`).join("")
+    ? items.map(item => `<details class="admin-pulse-entry"><summary><strong>${esc(item.name)}</strong></summary><small>${item.kind} · ${esc(item.time)}</small></details>`).join("")
     : `<span class="admin-pulse-empty">${label === "NOW" ? "現在の出演・シフトなし" : "次の予定なし"}</span>`;
   const hasSchedule = (tt.acts||[]).length || (tt.shifts||[]).length;
   return `<div class="admin-header-pulse">
