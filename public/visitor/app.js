@@ -74,9 +74,6 @@
     const findActive=(items)=>items.map(item=>({item,...actRange(ev,item)}))
       .filter(x=>x.start&&x.end&&now>=x.start&&now<x.end)
       .sort((a,b)=>a.start-b.start);
-    const findNext=(items)=>items.map(item=>({item,...actRange(ev,item)}))
-      .filter(x=>x.start&&x.start>now)
-      .sort((a,b)=>a.start-b.start)[0]||null;
     const memberNames=(item)=>{
       const byId=new Map((ev.members||[]).map(m=>[String(m.id),m]));
       const ids=Array.isArray(item.memberIds)?item.memberIds:[];
@@ -90,15 +87,10 @@
       ...findActive(acts).map(x=>({label:'NOW',kind:actCategory(x.item),name:actNames(ev,x.item),time:timeText(ev,x.item)})),
       ...findActive(shifts).map(x=>({label:'NOW',kind:'シフト',name:memberNames(x.item),time:timeText(ev,x.item)}))
     ];
-    const upcoming=[
-      ...[findNext(acts)].filter(Boolean).map(x=>({label:'NEXT',kind:actCategory(x.item),name:actNames(ev,x.item),time:timeText(ev,x.item),start:x.start})),
-      ...[findNext(shifts)].filter(Boolean).map(x=>({label:'NEXT',kind:'シフト',name:memberNames(x.item),time:timeText(ev,x.item),start:x.start}))
-    ].sort((a,b)=>a.start-b.start);
     const render=(entry,cls)=>`<span class="${cls}"><i class="live-dot"></i><span class="header-now-copy"><small>${entry.label} · ${entry.kind} · ${esc(entry.time)}</small><b>${esc(entry.name)}</b></span></span>`;
     const currentHtml=entries.map(x=>render(x,'header-now-current')).join('');
-    const nextHtml=upcoming.map(x=>render(x,'header-now-next')).join('');
     host.hidden=false;
-    host.innerHTML=currentHtml+nextHtml||'<span class="header-now-soon">COMING SOON...</span>';
+    host.innerHTML=currentHtml||'<span class="header-now-soon">現在出演・シフトはありません</span>';
   }
   function renderEventSelect(){
     const upcoming=activeEvents();
