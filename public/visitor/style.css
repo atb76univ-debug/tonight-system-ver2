@@ -94,3 +94,9 @@
  .visitor-timeline-block strong{font-size:10px}
  .visitor-timeline-block small{font-size:9px}
 }
+
+/* v7: performer category sections and RSVP cancellation */
+.profile-category{margin:22px 0 28px}
+.profile-category>.section-head{display:flex;align-items:center;justify-content:space-between;margin:0 2px 12px}
+.rsvp-cancel{margin-top:10px}
+.rsvp-cancel[hidden]{display:none!important}

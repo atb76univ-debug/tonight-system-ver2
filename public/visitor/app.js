@@ -36,7 +36,11 @@
     if(start)start=new Date(start.getTime()+offset*60000);if(end)end=new Date(end.getTime()+offset*60000);
     return {start,end};
   }
-  function actsFor(ev){return (Array.isArray(ev?.acts)?ev.acts:[]).slice().sort((a,b)=>(actRange(ev,a).start?.getTime()||0)-(actRange(ev,b).start?.getTime()||0));}
+  function isPublicPerformance(act){
+    const raw=[act?.type,act?.customType,act?.name].filter(Boolean).join(' ').toLowerCase();
+    return !/(準備|設営|撤収|リハーサル|リハ|サウンドチェック|sound\\s*check|setup|preparation|rehearsal|搬入|片付け)/i.test(raw);
+  }
+  function actsFor(ev){return (Array.isArray(ev?.acts)?ev.acts:[]).filter(isPublicPerformance).slice().sort((a,b)=>(actRange(ev,a).start?.getTime()||0)-(actRange(ev,b).start?.getTime()||0));}
   function statusFor(ev){
     const now=new Date(), acts=actsFor(ev), ranges=acts.map(a=>({a,...actRange(ev,a)}));
     const current=ranges.find(x=>x.start&&x.end&&now>=x.start&&now<x.end);
@@ -96,7 +100,7 @@
     all.forEach(x=>{const l=lanes.get(x.a.id);l.count=laneEnds.length;});
     const pxPerMinute=Math.max(1.1,...all.map(x=>58/Math.max(1,minute(x.end)-minute(x.start))));
     const height=Math.max(340,Math.ceil(span*pxPerMinute));
-    const marker=Math.max(0,Math.min(100,(now-min)/span*100));
+    const marker=(now-min)/span*100,showNow=now>=min&&now<=max;
     const blocks=all.map(x=>{
       const st=minute(x.start),en=minute(x.end),l=lanes.get(x.a.id),parallel=l.count>1;
       const left=parallel?`calc(12px + ${l.lane*100/l.count}%)`:'12px';
@@ -104,8 +108,7 @@
       const name=actNames(ev,x.a),type=x.a.type==='その他'?(x.a.customType||'その他'):(x.a.type||'DJ');
       return `<button class="visitor-timeline-block ${new Date()>=x.start&&new Date()<x.end?'is-live':''}" data-act="${esc(x.a.id)}" style="top:${(st-min)/span*100}%;height:${Math.max(2.5,(en-st)/span*100)}%;left:${left};${parallel?`width:${width};right:auto;`: 'right:12px;'}"><small>${esc(timeText(ev,x.a))}</small><strong>${esc(name)}</strong><span>${esc(type)}</span></button>`;
     }).join('');
-    const axisStart=new Date(base+min*60000),axisEnd=new Date(base+max*60000),fmt=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-    return `<div class="visitor-timeline-axis"><span>${fmt(axisStart)}</span><span>${fmt(axisEnd)}</span></div><div class="visitor-timeline-track" style="height:${height}px"><div class="visitor-timeline-now" style="top:${marker}%"><b>NOW</b></div>${blocks}</div>`;
+    return `<div class="visitor-timeline-track" style="height:${height}px">${showNow?`<div class="visitor-timeline-now" style="top:${marker}%"><b>NOW</b></div>`:''}${blocks}</div>`;
   }
   function renderDrinks(){
     const ev=selected();if(!ev){app.innerHTML=headerTitle('ドリンクメニュー')+'<div class="empty">イベントを選択してください。</div>';return;}
@@ -129,28 +132,44 @@
   function renderEventDetail(ev){
     const image=flyerUrl(ev), status=rsvpStatus(ev.id);
     const choice=(value,label,desc)=>`<button type="button" class="rsvp-choice ${status===value?'is-selected':''}" data-rsvp-choice="${value}"><strong>${label}</strong><small>${desc}</small></button>`;
-    app.innerHTML=`${image?`<img src="${image}" alt="${esc(ev.name)}" class="detail-flyer">`:''}${headerTitle(ev.name,dateLabel(ev.date))}<div class="event-meta">${statusPill(ev)}${ev.venue?`<span class="pill">${esc(ev.venue)}</span>`:''}</div>${ev.description?`<div class="card"><p class="event-description">${esc(ev.description)}</p></div>`:''}${renderNowNext(ev)}<section class="card rsvp-gate"><div class="eyebrow">YOUR PLAN</div><h2 class="card-heading">今夜、会場で会いましょう。</h2><p class="rsvp-intro">参加予定をシェアして、みんなでイベントを楽しもう。</p><label class="rsvp-name-label" for="rsvpName">みんなに表示する名前</label><input id="rsvpName" maxlength="30" placeholder="ニックネームを入力" value="${esc(localStorage.getItem('tonight_visitor_display_name')||'')}"><div class="rsvp-choice-grid">${choice('going','参加','行く予定！')}${choice('interested','興味あり','気になっている')}${choice('not-going','不参加','今回は参加しない')}</div><div class="rsvp-summary"><div id="rsvpCount" class="rsvp-count-grid"><span>読み込み中…</span></div><div id="rsvpParticipants" class="rsvp-participants"></div></div><div class="rsvp-actions"><button class="btn secondary" id="eventShare">↗ 友達にシェア</button><button class="btn secondary" id="calendarAdd">＋ カレンダーに追加</button><button class="btn secondary" id="noticeBtn">通知を設定</button></div><p class="rsvp-privacy">参加表明した名前とステータスは、ほかの来場者にも公開されます。</p></section><div class="detail-shortcuts"><button class="quick" data-goto="schedule"><span>▤</span>タイムテーブル</button><button class="quick" data-goto="profiles"><span>♙</span>出演者</button><button class="quick" data-goto="drinks"><span>◉</span>ドリンク</button><button class="quick" data-goto="photos"><span>▧</span>フォト</button></div>`;
+    app.innerHTML=`${image?`<img src="${image}" alt="${esc(ev.name)}" class="detail-flyer">`:''}${headerTitle(ev.name,dateLabel(ev.date))}<div class="event-meta">${statusPill(ev)}${ev.venue?`<span class="pill">${esc(ev.venue)}</span>`:''}</div>${ev.description?`<div class="card"><p class="event-description">${esc(ev.description)}</p></div>`:''}${renderNowNext(ev)}<section class="card rsvp-gate"><div class="eyebrow">YOUR PLAN</div><h2 class="card-heading">今夜、会場で会いましょう。</h2><p class="rsvp-intro">参加予定をシェアして、みんなでイベントを楽しもう。</p><label class="rsvp-name-label" for="rsvpName">表示名（参加・興味ありの場合に公開）</label><input id="rsvpName" maxlength="30" placeholder="ニックネームを入力" value="${esc(localStorage.getItem('tonight_visitor_display_name')||'')}"><div class="rsvp-choice-grid">${choice('going','参加','行く予定！')}${choice('interested','興味あり','気になっている')}${choice('not-going','不参加','今回は参加しない')}</div><button class="btn secondary rsvp-cancel" id="rsvpCancel" ${status?'':'hidden'}>参加表明を取り消す</button><div class="rsvp-summary"><div id="rsvpCount" class="rsvp-count-grid"><span>読み込み中…</span></div><div id="rsvpParticipants" class="rsvp-participants"></div></div><div class="rsvp-actions"><button class="btn secondary" id="eventShare">↗ 友達にシェア</button><button class="btn secondary" id="calendarAdd">＋ カレンダーに追加</button><button class="btn secondary" id="noticeBtn">通知を設定</button></div><p class="rsvp-privacy">「参加」「興味あり」の名前のみ公開されます。不参加は人数・名前ともに公開されません。</p></section><div class="detail-shortcuts"><button class="quick" data-goto="schedule"><span>▤</span>タイムテーブル</button><button class="quick" data-goto="profiles"><span>♙</span>出演者</button><button class="quick" data-goto="drinks"><span>◉</span>ドリンク</button><button class="quick" data-goto="photos"><span>▧</span>フォト</button></div>`;
     refreshRsvpList(ev.id);
   }
   async function refreshRsvpList(eventId){
     const count=$('#rsvpCount'), list=$('#rsvpParticipants'); if(!count||!list)return;
-    try{const res=await fetch(`/api/public/rsvp?eventId=${encodeURIComponent(eventId)}&visitorId=${encodeURIComponent(visitorId)}`,{cache:'no-store'});if(!res.ok)throw new Error('RSVP load failed');const payload=await res.json();
-      if(payload.myStatus&&['going','interested','not-going'].includes(payload.myStatus)){saveRsvp(eventId,payload.myStatus);document.querySelectorAll('[data-rsvp-choice]').forEach(button=>button.classList.toggle('is-selected',button.dataset.rsvpChoice===payload.myStatus));}
-      const people=payload.participants||[], counts={'going':0,'interested':0,'not-going':0}; people.forEach(p=>{if(counts[p.status]!==undefined)counts[p.status]++;});
-      count.innerHTML=`<div class="rsvp-count"><strong>${counts.going}</strong><span>参加</span></div><div class="rsvp-count"><strong>${counts.interested}</strong><span>興味あり</span></div><div class="rsvp-count"><strong>${counts['not-going']}</strong><span>不参加</span></div>`;
-      const labels={going:'参加',interested:'興味あり','not-going':'不参加'};
-      list.innerHTML=people.length?people.map(p=>`<div class="rsvp-person"><span class="rsvp-avatar">${esc((p.name||'?').trim().slice(0,1).toUpperCase())}</span><span class="rsvp-person-name">${esc(p.name)}</span><span class="rsvp-person-status status-${p.status}">${labels[p.status]||'参加'}</span></div>`).join(''):'<span class="notice">最初の参加表明をしてみよう！</span>';
+    try{
+      const res=await fetch(`/api/public/rsvp?eventId=${encodeURIComponent(eventId)}&visitorId=${encodeURIComponent(visitorId)}`,{cache:'no-store'});
+      if(!res.ok)throw new Error('RSVP load failed');
+      const payload=await res.json();
+      if(['going','interested','not-going'].includes(payload.myStatus)){saveRsvp(eventId,payload.myStatus);document.querySelectorAll('[data-rsvp-choice]').forEach(button=>button.classList.toggle('is-selected',button.dataset.rsvpChoice===payload.myStatus));}
+      else {saveRsvp(eventId,null);document.querySelectorAll('[data-rsvp-choice]').forEach(button=>button.classList.remove('is-selected'));}
+      const cancel=$('#rsvpCancel');if(cancel)cancel.hidden=!payload.myStatus;
+      const people=(payload.participants||[]).filter(p=>['going','interested'].includes(p.status));
+      const counts={going:0,interested:0};people.forEach(p=>counts[p.status]++);
+      count.innerHTML=`<div class="rsvp-count"><strong>${counts.going}</strong><span>参加</span></div><div class="rsvp-count"><strong>${counts.interested}</strong><span>興味あり</span></div>`;
+      const labels={going:'参加',interested:'興味あり'};
+      list.innerHTML=people.length?people.map(p=>`<div class="rsvp-person"><span class="rsvp-avatar">${esc((p.name||'?').trim().slice(0,1).toUpperCase())}</span><span class="rsvp-person-name">${esc(p.name)}</span><span class="rsvp-person-status status-${p.status}">${labels[p.status]}</span></div>`).join(''):'<span class="notice">参加・興味ありの人はまだいません。</span>';
     }catch{count.textContent='参加状況を取得できませんでした';list.innerHTML='';}
   }
   async function setRsvpStatus(status){
     const ev=selected();if(!ev||!['going','interested','not-going'].includes(status))return;
-    const name=$('#rsvpName')?.value.trim()||localStorage.getItem('tonight_visitor_display_name')||'';
-    if(!name){alert('一覧に表示する名前を入力してください。');$('#rsvpName')?.focus();return;}
+    const enteredName=$('#rsvpName')?.value.trim()||localStorage.getItem('tonight_visitor_display_name')||'';
+    const name=enteredName||(status==='not-going'?'非公開':'');
+    if(!name){alert('参加・興味ありの場合は、一覧に表示する名前を入力してください。');$('#rsvpName')?.focus();return;}
     try{
       const res=await fetch(`/api/public/rsvp?eventId=${encodeURIComponent(ev.id)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({visitorId,name,status})});
       if(!res.ok)throw new Error(await res.text());
-      saveRsvp(ev.id,status);localStorage.setItem('tonight_visitor_display_name',name);render();
+      saveRsvp(ev.id,status);if(status!=='not-going')localStorage.setItem('tonight_visitor_display_name',name);render();
     }catch(error){alert('参加表明を保存できませんでした。通信環境を確認して、もう一度お試しください。');}
+  }
+
+  async function cancelRsvp(){
+    const ev=selected();if(!ev)return;
+    try{
+      const res=await fetch(`/api/public/rsvp?eventId=${encodeURIComponent(ev.id)}&visitorId=${encodeURIComponent(visitorId)}`,{method:'DELETE'});
+      if(!res.ok)throw new Error(await res.text());
+      saveRsvp(ev.id,null);render();
+    }catch{alert('参加表明を取り消せませんでした。通信環境を確認して、もう一度お試しください。');}
   }
   function render(){
     const back=$('#backBtn'), nav=$('.bottom-nav'), hasEvent=Boolean(selectedId);
@@ -170,17 +189,24 @@
   function renderProfiles(){
     const ev=selected(); if(!ev){app.innerHTML=headerTitle('出演者');return;}
     const all=performersFor(ev);
-    const list=profileFocusIds?.length?all.filter(m=>profileFocusIds.includes(String(m.id))):all;
-    const cards=list.map(m=>`<article class="performer-profile-card">
+    const categories=['DJ','LIVE','VJ','その他'];
+    const categoryFor=act=>{const t=String(act.type==='その他'?(act.customType||'その他'):(act.type||'DJ')).toUpperCase();if(t.includes('DJ'))return 'DJ';if(t.includes('LIVE')||t.includes('BAND')||t.includes('ライブ'))return 'LIVE';if(t.includes('VJ'))return 'VJ';return 'その他';};
+    const renderCard=m=>`<article class="performer-profile-card">
       <div class="performer-profile-cover">${m.photo?`<img src="${esc(m.photo)}" alt="${esc(m.nickname||m.name)}" loading="lazy">`:`<div class="performer-profile-placeholder">tonight!</div>`}</div>
       <div class="performer-profile-body">
-        <div class="eyebrow">ARTIST / DJ</div><h2>${esc(m.nickname||m.name||'出演者')}</h2>
+        <div class="eyebrow">ARTIST</div><h2>${esc(m.nickname||m.name||'出演者')}</h2>
         ${m.bio?`<p class="performer-bio">${esc(m.bio)}</p>`:''}
         ${m.genre?`<div class="profile-line"><b>GENRE</b><span>${esc(m.genre)}</span></div>`:''}
         ${m.favoriteArtists?`<div class="profile-line"><b>FAVORITE ARTISTS</b><span>${esc(m.favoriteArtists)}</span></div>`:''}
         <div class="profile-links">${m.instagram?`<a href="${esc(/^https:\/\//i.test(m.instagram)?m.instagram:`https://www.instagram.com/${m.instagram.replace(/^@/,'')}/`)}" target="_blank" rel="noopener">Instagram ↗</a>`:''}${m.spotifyPlaylist?`<a href="${esc(m.spotifyPlaylist)}" target="_blank" rel="noopener">Spotify Playlist ↗</a>`:''}</div>
-      </div></article>`).join('');
-    app.innerHTML=`${headerTitle('出演者','このイベントに出演するDJ・アーティストのプロフィール。')}<div class="profile-event-label">${esc(ev.name)} · ${esc(dateLabel(ev.date))}</div>${cards?`<div class="performer-profile-grid">${cards}</div>`:`<div class="empty"><strong>出演者プロフィールはまだありません</strong>プロフィールが登録されると、ここに表示されます。</div>`}`;
+      </div></article>`;
+    const groups=categories.map(category=>{
+      const ids=[...new Set(actsFor(ev).filter(a=>categoryFor(a)===category).flatMap(a=>(a.memberIds||[]).map(String)))];
+      const members=ids.map(id=>all.find(m=>String(m.id)===id)).filter(Boolean);
+      const filtered=profileFocusIds?.length?members.filter(m=>profileFocusIds.includes(String(m.id))):members;
+      return filtered.length?`<section class="profile-category"><div class="section-head"><h2>${category}</h2><span class="pill">${filtered.length}</span></div><div class="performer-profile-grid">${filtered.map(renderCard).join('')}</div></section>`:'';
+    }).join('');
+    app.innerHTML=`${headerTitle('出演者','カテゴリーごとに出演者のプロフィールをチェック。')}<div class="profile-event-label">${esc(ev.name)} · ${esc(dateLabel(ev.date))}</div>${groups||`<div class="empty"><strong>出演者プロフィールはまだありません</strong>プロフィールが登録されると、ここに表示されます。</div>`}`;
     profileFocusIds=null;
   }
   function openAct(id){
@@ -235,6 +261,7 @@
     if(e.target.closest('#noticeBtn')){enableNotices();return;}
     if(e.target.closest('#calendarAdd')){addToCalendar();return;}
     const rsvpChoice=e.target.closest('[data-rsvp-choice]');if(rsvpChoice){setRsvpStatus(rsvpChoice.dataset.rsvpChoice);return;}
+    if(e.target.closest('#rsvpCancel')){cancelRsvp();return;}
     if(e.target.closest('#backBtn')){if(page==='detail'){setPage('home');return;}setPage('home');return;}
     if(e.target.closest('#backHome')){setPage('home');return;}
     if(e.target.closest('#eventSwitchInline')){selectedId=null;setPage('select');return;}

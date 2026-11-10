@@ -1,17 +1,12 @@
-# tonight! Visitor App v6
+# tonight! Visitor App v7
 
-## v6 updates
-- Event details and all visitor tabs are viewable without submitting an RSVP.
-- RSVP choices (going / interested / not going) remain available as an optional social action.
-- Public RSVP totals and participant names/statuses are shown on the event page.
-- Added event sharing, Google Calendar add, and in-app browser notification opt-in actions.
-- Added a vertical live timetable visualization with a real-time horizontal NOW marker, following the admin timetable timeline behavior.
-- Timeline refreshes every 30 seconds while the timetable is open.
-- Public event time offset is applied to act start/end times.
+## v7 updates
+- NOW / NEXT and visitor timetable exclude operational entries such as setup, preparation, teardown, rehearsal, sound check, load-in and cleanup.
+- Removed the horizontal start/end labels above the vertical live timeline; the NOW marker is only shown while the current time falls within the displayed schedule.
+- Performer profiles are grouped by DJ / LIVE / VJ / Other category.
+- RSVP public list exposes names only for Going and Interested. Not Going remains private.
+- Added RSVP cancellation (DELETE `/api/public/rsvp?eventId=...&visitorId=...`).
+- Not Going does not require or publish a display name.
 
 ## Deploy
-Update the existing Cloudflare project with:
-- `public/visitor/` (all files)
-- `src/worker.js` is unchanged from v5 and is included for completeness.
-
-No new Worker or database migration is required. RSVP data continues to use the existing `/api/public/rsvp` endpoint.
+Replace `public/visitor/` and `src/worker.js` in the existing Cloudflare project, then deploy.
