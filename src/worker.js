@@ -149,6 +149,39 @@ export class Store {
   constructor(state) { this.state = state; }
   async fetch(req) {
     const path = new URL(req.url).pathname;
+    if (path === '/public-db' && req.method === 'GET') {
+      const current = (await this.state.storage.get('db')) || { events: [], members: [], drinkLineup: [] };
+      const members = Array.isArray(current.members) ? current.members : [];
+      const events = (Array.isArray(current.events) ? current.events : [])
+        .filter(event => event && !event.deleted)
+        .map(event => {
+          const tt = event.tt || {};
+          const acts = (Array.isArray(tt.acts) ? tt.acts : []).map(act => ({
+            id: String(act.id || ''), startDate: act.startDate || event.date, start: act.start || '',
+            endDate: act.endDate || '', end: act.end || '', type: act.type || 'DJ',
+            customType: act.customType || '', name: String(act.name || ''),
+            memberIds: Array.isArray(act.memberIds) ? act.memberIds.map(String) : []
+          }));
+          const referencedIds = new Set(acts.flatMap(act => act.memberIds));
+          const publicMembers = members.filter(member => referencedIds.has(String(member.id))).map(member => ({
+            id: String(member.id), name: String(member.name || ''), nickname: String(member.nickname || ''),
+            bio: String(member.bio || member.profile || ''), instagram: String(member.instagram || ''),
+            genre: String(member.genre || '')
+          }));
+          const products = (Array.isArray(event.bar?.products) ? event.bar.products :
+            (Array.isArray(current.drinkLineup) ? current.drinkLineup : []))
+            .map(product => ({ id: String(product.id || ''), name: String(product.name || ''),
+              price: Math.max(0, Number(product.price || 0)), soldOut: Boolean(product.soldOut) }));
+          return { id: String(event.id), name: String(event.name || ''), date: String(event.date || ''),
+            flyer: Number(event.flyer || 0), archived: Boolean(event.archived), acts, members: publicMembers,
+            products, offsetMinutes: Number(tt.offsetMinutes || 0), gallery: Array.isArray(event.gallery) ? event.gallery.filter(x => typeof x === 'string' && /^https:\/\//.test(x)).slice(0, 60) : [],
+            venue: String(event.venue || ''), description: String(event.description || '') };
+        })
+        .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      return Response.json({ events, updated: Number(current.updated || 0) }, {
+        headers: { 'Cache-Control': 'no-store' }
+      });
+    }
     if (path === '/db') {
       const current = (await this.state.storage.get('db')) || { events: [], members: [], membersUpdated: 0, drinkLineup: [], drinkLineupUpdated: 0 };
       if (req.method === 'PUT') {
@@ -183,6 +216,11 @@ export class Store {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === '/api/public/db') {
+      const stub = env.STORE.get(env.STORE.idFromName('main'));
+      const response = await stub.fetch(new Request('https://do/public-db', { method: 'GET' }));
+      return new Response(response.body, { status: response.status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }
     if (url.pathname === '/api/db' || url.pathname.startsWith('/api/flyer/')) {
       const stub = env.STORE.get(env.STORE.idFromName('main'));
       const inner = new Request('https://do' + url.pathname.replace('/api', ''), request);
