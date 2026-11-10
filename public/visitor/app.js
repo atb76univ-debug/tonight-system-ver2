@@ -72,7 +72,7 @@
     if(!ev||page==='select'){host.hidden=true;host.innerHTML='';return;}
     const st=statusFor(ev), current=st.current?.a||null, next=st.next?.a||null;
     const currentHtml=current?`<span class="header-now-current"><i class="live-dot"></i>NOW <b>${esc(actNames(ev,current))}</b></span>`:'';
-    const nextHtml=next?`<span class="header-now-next">NEXT <b>${esc(actNames(ev,next))}</b></span>`:'';
+    const nextHtml=next?`<span class="header-now-next"><i class="live-dot"></i>NEXT <b>${esc(actNames(ev,next))}</b></span>`:'';
     host.hidden=false;
     host.innerHTML=currentHtml+nextHtml||'<span class="header-now-soon">COMING SOON...</span>';
   }
