@@ -9,13 +9,13 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="../icon-192.png">
   <link rel="icon" type="image/png" href="../TMPlogo.png">
-  <link rel="stylesheet" href="style.css?v=visitor-v1">
+  <link rel="stylesheet" href="style.css?v=visitor-v2">
 </head>
 <body>
   <header class="topbar">
     <button id="backBtn" class="back-btn" type="button" aria-label="戻る" hidden>‹</button>
     <a class="brand" href="#home" aria-label="tonight! ホーム"><img src="../TMPlogo.png" alt="TSUKUBA MUSIC PROJECT"><span>tonight!</span></a>
-    <button class="share-top" id="shareBtn" type="button" aria-label="共有">↗</button>
+    <div class="top-actions"><button class="event-switch-top" id="eventSwitchTop" type="button">イベント選択</button><button class="share-top" id="shareBtn" type="button" aria-label="共有">↗</button></div>
   </header>
   <main id="app" aria-live="polite"><div class="loading"><img src="../TMPlogo.png" alt=""><p>イベント情報を読み込んでいます…</p></div></main>
   <nav class="bottom-nav" aria-label="メインメニュー">
@@ -26,7 +26,7 @@
     <button data-page="archive"><span>◷</span><small>アーカイブ</small></button>
   </nav>
   <div id="modalRoot"></div>
-  <script src="app.js?v=visitor-v1"></script>
+  <script src="app.js?v=visitor-v2"></script>
   <script>if('serviceWorker' in navigator) addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script>
 </body>
 </html>

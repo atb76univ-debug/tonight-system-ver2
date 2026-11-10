@@ -166,7 +166,9 @@ export class Store {
           const publicMembers = members.filter(member => referencedIds.has(String(member.id))).map(member => ({
             id: String(member.id), name: String(member.name || ''), nickname: String(member.nickname || ''),
             bio: String(member.bio || member.profile || ''), instagram: String(member.instagram || ''),
-            genre: String(member.genre || '')
+            genre: String(member.genre || ''), favoriteArtists: String(member.favoriteArtists || ''),
+            photo: /^https:\/\//i.test(String(member.photo || '')) ? String(member.photo) : '',
+            spotifyPlaylist: /^https:\/\//i.test(String(member.spotifyPlaylist || '')) ? String(member.spotifyPlaylist) : ''
           }));
           const products = (Array.isArray(event.bar?.products) ? event.bar.products :
             (Array.isArray(current.drinkLineup) ? current.drinkLineup : []))
@@ -181,6 +183,36 @@ export class Store {
       return Response.json({ events, updated: Number(current.updated || 0) }, {
         headers: { 'Cache-Control': 'no-store' }
       });
+    }
+    if (path === '/public-rsvp') {
+      const url = new URL(req.url);
+      const eventId = String(url.searchParams.get('eventId') || '');
+      if (!eventId || eventId.length > 100) return new Response('bad event', { status: 400 });
+      const db = (await this.state.storage.get('db')) || { events: [] };
+      const event = (db.events || []).find(item => String(item.id) === eventId && !item.deleted);
+      if (!event) return new Response('event not found', { status: 404 });
+      const key = 'public-rsvp:' + eventId;
+      const records = (await this.state.storage.get(key)) || {};
+      if (req.method === 'GET') {
+        const participants = Object.values(records).sort((a,b) => Number(a.createdAt||0)-Number(b.createdAt||0)).map(item => ({ name: item.name, createdAt: item.createdAt }));
+        return Response.json({ participants, count: participants.length }, { headers: { 'Cache-Control': 'no-store' } });
+      }
+      if (req.method === 'POST') {
+        let body;
+        try { body = await req.json(); } catch { return new Response('bad json', { status: 400 }); }
+        const visitorId = String(body?.visitorId || '').slice(0, 80);
+        const name = String(body?.name || '').trim().replace(/[<>]/g, '').slice(0, 30);
+        if (!/^[A-Za-z0-9_-]{8,80}$/.test(visitorId)) return new Response('bad visitor id', { status: 400 });
+        if (body?.going === false) delete records[visitorId];
+        else {
+          if (!name) return new Response('name required', { status: 400 });
+          if (Object.keys(records).length >= 1000 && !records[visitorId]) return new Response('full', { status: 409 });
+          records[visitorId] = { name, createdAt: Date.now() };
+        }
+        await this.state.storage.put(key, records);
+        return Response.json({ ok: true, count: Object.keys(records).length }, { headers: { 'Cache-Control': 'no-store' } });
+      }
+      return new Response('method not allowed', { status: 405 });
     }
     if (path === '/db') {
       const current = (await this.state.storage.get('db')) || { events: [], members: [], membersUpdated: 0, drinkLineup: [], drinkLineupUpdated: 0 };
@@ -219,6 +251,13 @@ export default {
     if (url.pathname === '/api/public/db') {
       const stub = env.STORE.get(env.STORE.idFromName('main'));
       const response = await stub.fetch(new Request('https://do/public-db', { method: 'GET' }));
+      return new Response(response.body, { status: response.status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }
+    if (url.pathname === '/api/public/rsvp') {
+      const stub = env.STORE.get(env.STORE.idFromName('main'));
+      const innerUrl = new URL('https://do/public-rsvp');
+      innerUrl.search = url.search;
+      const response = await stub.fetch(new Request(innerUrl, request));
       return new Response(response.body, { status: response.status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     }
     if (url.pathname === '/api/db' || url.pathname.startsWith('/api/flyer/')) {
