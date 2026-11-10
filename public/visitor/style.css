@@ -51,3 +51,46 @@
 .now-panel{margin:18px 0}.now-panel .notice{margin-bottom:0}
 @media(max-width:600px){.event-carousel .event-select-card{flex-basis:min(82vw,330px)}.rsvp-choice-grid{gap:7px}.rsvp-choice{min-height:82px;padding:10px 5px}.rsvp-choice strong{font-size:14px}.rsvp-choice small{font-size:10px}}
 @media(min-width:900px){.event-carousel .event-select-card{flex-basis:340px}}
+
+
+/* v6: open event details, social RSVP and live timetable marker */
+.rsvp-gate{background:#fff;border:1px solid var(--border);box-shadow:var(--shadow)}
+.rsvp-intro{font-size:13px;color:var(--sub);line-height:1.65;margin:0 0 4px}
+.rsvp-count-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.rsvp-count{background:#f5f6f8;border-radius:13px;padding:12px 8px;text-align:center;display:grid;gap:2px}
+.rsvp-count strong{font-size:25px;line-height:1.15;letter-spacing:-.04em}
+.rsvp-count span{font-size:11px;font-weight:800;color:var(--sub)}
+.rsvp-participants{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:7px;margin-top:13px;max-height:260px;overflow:auto}
+.rsvp-person{display:flex;align-items:center;gap:8px;min-width:0;padding:7px 9px;background:#fafafa;border:1px solid #eee;border-radius:12px}
+.rsvp-avatar{width:29px;height:29px;flex:0 0 29px;border-radius:50%;display:grid;place-items:center;background:#e8edf5;color:#26364d;font-size:12px;font-weight:850}
+.rsvp-person-name{font-size:12px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.rsvp-person-status{font-size:10px;font-weight:800;white-space:nowrap;color:#666}
+.rsvp-person-status.status-going{color:#16834c}.rsvp-person-status.status-interested{color:#996500}.rsvp-person-status.status-not-going{color:#888}
+.rsvp-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:15px}
+.rsvp-actions .btn{font-size:12px;padding:12px 8px}
+.rsvp-privacy{font-size:10px;color:#999;line-height:1.5;margin:12px 0 0}
+.detail-shortcuts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:16px 0}
+.timeline-visual-card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:15px;margin:12px 0 20px;box-shadow:var(--shadow);overflow:hidden}
+.timeline-visual-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:13px}
+.timeline-visual-heading strong{font-size:11px;letter-spacing:.1em}
+.timeline-visual-heading span{font-size:10px;color:var(--sub)}
+.visitor-timeline-axis{display:flex;justify-content:space-between;color:var(--sub);font-size:10px;font-weight:750;padding:0 12px 7px}
+.visitor-timeline-track{position:relative;margin:0 0 0 0;border-left:1px solid #e6e7eb;border-right:1px solid #f0f0f0;background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(10% - 1px),#eceef1 calc(10% - 1px),#eceef1 10%);border-radius:9px;overflow:visible}
+.visitor-timeline-block{position:absolute;z-index:2;min-width:0;border:1px solid #d9e4f5;background:#edf4ff;color:#17283f;border-radius:9px;padding:7px 9px;text-align:left;display:flex;flex-direction:column;justify-content:center;gap:3px;overflow:hidden}
+.visitor-timeline-block small{font-size:10px;font-weight:850;white-space:nowrap}
+.visitor-timeline-block strong{font-size:12px;line-height:1.25;overflow-wrap:anywhere}
+.visitor-timeline-block span{font-size:9px;color:#65758b;font-weight:800}
+.visitor-timeline-block.is-live{background:#111;color:#fff;border-color:#111;box-shadow:0 3px 12px #0002}
+.visitor-timeline-block.is-live span{color:#ccc}
+.visitor-timeline-now{position:absolute;z-index:5;left:-4px;right:-4px;height:2px;background:#e53935;pointer-events:none}
+.visitor-timeline-now:before{content:"";position:absolute;left:-2px;top:-4px;width:10px;height:10px;border-radius:50%;background:#e53935}
+.visitor-timeline-now b{position:absolute;right:0;top:-9px;background:#e53935;color:#fff;font-size:9px;letter-spacing:.08em;padding:3px 6px;border-radius:5px}
+.timeline-list-heading{font-size:15px;font-weight:850;margin:18px 2px 10px}
+@media(max-width:600px){
+ .rsvp-actions{grid-template-columns:1fr 1fr}.rsvp-actions #noticeBtn{grid-column:1/-1}
+ .detail-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .timeline-visual-card{padding:12px}
+ .visitor-timeline-block{padding:5px 6px}
+ .visitor-timeline-block strong{font-size:10px}
+ .visitor-timeline-block small{font-size:9px}
+}
