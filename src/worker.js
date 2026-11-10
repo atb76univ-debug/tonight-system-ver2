@@ -194,8 +194,10 @@ export class Store {
       const key = 'public-rsvp:' + eventId;
       const records = (await this.state.storage.get(key)) || {};
       if (req.method === 'GET') {
-        const participants = Object.values(records).sort((a,b) => Number(a.createdAt||0)-Number(b.createdAt||0)).map(item => ({ name: item.name, createdAt: item.createdAt }));
-        return Response.json({ participants, count: participants.length }, { headers: { 'Cache-Control': 'no-store' } });
+        const participants = Object.values(records).sort((a,b) => Number(a.createdAt||0)-Number(b.createdAt||0)).map(item => ({ name: item.name, status: ['going','interested','not-going'].includes(item.status) ? item.status : 'going', createdAt: item.createdAt }));
+        const visitorId = String(url.searchParams.get('visitorId') || '');
+        const myStatus = records[visitorId]?.status || (records[visitorId] ? 'going' : null);
+        return Response.json({ participants, count: participants.length, myStatus }, { headers: { 'Cache-Control': 'no-store' } });
       }
       if (req.method === 'POST') {
         let body;
@@ -203,12 +205,11 @@ export class Store {
         const visitorId = String(body?.visitorId || '').slice(0, 80);
         const name = String(body?.name || '').trim().replace(/[<>]/g, '').slice(0, 30);
         if (!/^[A-Za-z0-9_-]{8,80}$/.test(visitorId)) return new Response('bad visitor id', { status: 400 });
-        if (body?.going === false) delete records[visitorId];
-        else {
-          if (!name) return new Response('name required', { status: 400 });
-          if (Object.keys(records).length >= 1000 && !records[visitorId]) return new Response('full', { status: 409 });
-          records[visitorId] = { name, createdAt: Date.now() };
-        }
+        const status = String(body?.status || (body?.going === false ? '' : 'going'));
+        if (!['going','interested','not-going'].includes(status)) return new Response('bad status', { status: 400 });
+        if (!name) return new Response('name required', { status: 400 });
+        if (Object.keys(records).length >= 1000 && !records[visitorId]) return new Response('full', { status: 409 });
+        records[visitorId] = { name, status, createdAt: Date.now() };
         await this.state.storage.put(key, records);
         return Response.json({ ok: true, count: Object.keys(records).length }, { headers: { 'Cache-Control': 'no-store' } });
       }

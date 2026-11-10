@@ -14,8 +14,9 @@
   const dateObj = s => /^\d{4}-\d{2}-\d{2}$/.test(String(s||'')) ? new Date(`${s}T00:00:00`) : null;
   const dateLabel = s => { const d=dateObj(s); return d ? `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）` : '日程未定'; };
   const rsvps = () => { try{return JSON.parse(localStorage.getItem(RSVP_KEY)||'{}')}catch{return {}} };
-  const isRsvped = id => Boolean(rsvps()[id]);
-  const saveRsvp = (id, value) => { const v=rsvps(); if(value)v[id]=true; else delete v[id]; localStorage.setItem(RSVP_KEY,JSON.stringify(v)); };
+  const rsvpStatus = id => { const value=rsvps()[id]; return value===true?'going':(['going','interested','not-going'].includes(value)?value:null); };
+  const hasResponded = id => Boolean(rsvpStatus(id));
+  const saveRsvp = (id, value) => { const v=rsvps(); if(value)v[id]=value; else delete v[id]; localStorage.setItem(RSVP_KEY,JSON.stringify(v)); };
   const activeEvents = () => data.events.filter(e=>!e.archived).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   const archivedEvents = () => data.events.filter(e=>e.archived).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const selected = () => selectedId ? (data.events.find(e=>e.id===selectedId) || null) : null;
@@ -62,7 +63,10 @@
   function headerTitle(title,sub=''){return `<div class="eyebrow">TSUKUBA MUSIC PROJECT</div><h1 class="page-title">${esc(title)}</h1>${sub?`<p class="lead">${esc(sub)}</p>`:''}`;}
   function renderEventSelect(){
     const upcoming=activeEvents();
-    app.innerHTML=`${headerTitle('イベントを選択','参加するイベントを選ぶと、専用のホーム画面が開きます。')}<div class="event-select-grid">${upcoming.length?upcoming.map(ev=>`<button class="event-select-card" data-select-event="${esc(ev.id)}">${flyerUrl(ev)?`<img src="${flyerUrl(ev)}" alt="${esc(ev.name)} フライヤー">`:`<div class="event-select-placeholder"><img src="../TMPlogo.png" alt=""></div>`}<div class="event-select-copy"><div>${statusPill(ev)}</div><strong>${esc(ev.name)}</strong><small>${esc(dateLabel(ev.date))}${ev.venue?` · ${esc(ev.venue)}`:''}</small><span>このイベントを開く　›</span></div></button>`).join(''):`<div class="empty"><strong>公開中のイベントはありません</strong>次回のtonight!をお楽しみに。</div>`}</div>${archivedEvents().length?`<div class="section-head"><h2>過去のイベント</h2><button data-page="archive">アーカイブを見る</button></div>`:''}<div class="footer">TONIGHT! · TSUKUBA MUSIC PROJECT</div>`;
+    const next=upcoming.find(e=>(e.date||'')>=localDate(new Date())) || null;
+    const nextAct=next?actsFor(next).find(a=>actRange(next,a).start):null;
+    const nextTime=next?`${dateLabel(next.date)}${nextAct?` · ${String(nextAct.start||'').slice(0,5)} 開始`:''}`:'次回開催は調整中';
+    app.innerHTML=`<section class="next-event-banner"><div class="eyebrow">NEXT EVENT</div><strong>${esc(nextTime)}</strong>${next?`<span>${esc(next.name)}</span>`:''}</section>${headerTitle('イベントを選択','横にスワイプして、参加するイベントを選んでください。')}<div class="event-carousel" aria-label="イベント一覧">${upcoming.length?upcoming.map(ev=>`<button class="event-select-card" data-select-event="${esc(ev.id)}">${flyerUrl(ev)?`<img src="${flyerUrl(ev)}" alt="${esc(ev.name)} フライヤー">`:`<div class="event-select-placeholder"><img src="../TMPlogo.png" alt=""></div>`}<div class="event-select-copy"><div>${statusPill(ev)}</div><strong>${esc(ev.name)}</strong><small>${esc(dateLabel(ev.date))}${ev.venue?` · ${esc(ev.venue)}`:''}</small><span>イベントを開く　›</span></div></button>`).join(''):`<div class="empty"><strong>公開中のイベントはありません</strong>次回のtonight!をお楽しみに。</div>`}</div>${archivedEvents().length?`<div class="section-head"><h2>過去のイベント</h2><button data-page="archive">アーカイブを見る</button></div>`:''}<div class="footer">TONIGHT! · TSUKUBA MUSIC PROJECT</div>`;
   }
   function renderHome(){
     const ev=selected(); if(!ev){page='select';renderEventSelect();return;} const upcoming=activeEvents().filter(e=>(e.date||'')>=localDate(new Date()));
@@ -91,35 +95,45 @@
     const archived=archivedEvents(), past=activeEvents().filter(e=>(e.date||'')<localDate(new Date())).reverse();
     app.innerHTML=`${headerTitle('イベントアーカイブ','これまでのtonight!を振り返ろう。')}<div class="section-head"><h2>過去のイベント</h2></div>${archived.length||past.length?`<div class="event-grid">${[...archived,...past.filter(p=>!archived.some(a=>a.id===p.id))].map(eventCard).join('')}</div>`:`<div class="empty"><strong>アーカイブはまだありません</strong>イベント終了後、公開されたイベントがこちらに並びます。</div>`}`;
   }
-  async function renderEventDetail(ev){
-    const acts=actsFor(ev),isGoing=isRsvped(ev.id),image=flyerUrl(ev);
-    app.innerHTML=`<button class="text-link" id="backHome">← イベントホームへ</button>${image?`<img src="${image}" alt="${esc(ev.name)}" class="detail-flyer">`:''}${headerTitle(ev.name,dateLabel(ev.date))}<div class="event-meta">${statusPill(ev)}${ev.venue?`<span class="pill">${esc(ev.venue)}</span>`:''}</div>${ev.description?`<div class="card"><p class="event-description">${esc(ev.description)}</p></div>`:''}<div class="card"><h2 class="card-heading">参加表明</h2><p class="notice">参加予定を登録すると、ほかの来場者にも名前が表示されます。</p><div class="rsvp-form"><input id="rsvpName" maxlength="30" placeholder="表示する名前（ニックネーム可）" value="${esc(localStorage.getItem('tonight_visitor_display_name')||'')}"><button class="btn ${isGoing?'secondary':'blue'}" id="rsvpBtn">${isGoing?'参加予定を取り消す':'参加予定に登録する'}</button></div><div class="rsvp-summary"><strong id="rsvpCount">参加予定を読み込み中…</strong><div id="rsvpParticipants" class="rsvp-participants"></div></div></div><div class="section-head"><h2>タイムテーブル</h2><button data-goto="schedule">すべて見る</button></div>${acts.length?`<div class="timeline">${acts.slice(0,5).map(a=>`<button class="act" data-act="${esc(a.id)}"><div class="act-time">${esc(timeText(ev,a))}</div><div class="act-info"><span class="act-type">${esc(a.type||'DJ')}</span><strong>${esc(actNames(ev,a))}</strong></div></button>`).join('')}</div>`:'<div class="empty">タイムテーブルは準備中です。</div>'}<div class="btn-row" style="margin-top:16px"><button class="btn secondary" id="eventShare">↗ シェア</button><button class="btn secondary" data-goto="photos">写真を見る</button></div>`;
+  function renderNowNext(ev){
+    const st=statusFor(ev);
+    const line=(label,item)=>item?`<div class="now-item"><div><small>${label} · ${esc(timeText(ev,item))}</small><strong>${esc(actNames(ev,item))}</strong></div><span class="act-type">${esc(item.type||'DJ')}</span></div>`:'';
+    return `<section class="now-panel"><div class="now-top"><span><i class="live-dot"></i>NOW / NEXT</span><span>${esc(st.label)}</span></div>${line('NOW',st.current)}${line('NEXT',st.next)}${!st.current&&!st.next?'<p class="notice" style="color:#bbb">タイムテーブルは公開後に表示されます。</p>':''}</section>`;
+  }
+  function renderEventDetail(ev){
+    const image=flyerUrl(ev), status=rsvpStatus(ev.id);
+    const choice=(value,label,desc)=>`<button type="button" class="rsvp-choice ${status===value?'is-selected':''}" data-rsvp-choice="${value}"><strong>${label}</strong><small>${desc}</small></button>`;
+    app.innerHTML=`${image?`<img src="${image}" alt="${esc(ev.name)}" class="detail-flyer">`:''}${headerTitle(ev.name,dateLabel(ev.date))}<div class="event-meta">${statusPill(ev)}${ev.venue?`<span class="pill">${esc(ev.venue)}</span>`:''}</div>${ev.description?`<div class="card"><p class="event-description">${esc(ev.description)}</p></div>`:''}${renderNowNext(ev)}<section class="card rsvp-gate"><div class="eyebrow">YOUR PLAN</div><h2 class="card-heading">このイベントに参加しますか？</h2><p class="notice">参加表明を選ぶと、タイムテーブルや出演者、ドリンクなどの詳細をご覧いただけます。</p><label class="rsvp-name-label" for="rsvpName">表示名</label><input id="rsvpName" maxlength="30" placeholder="ニックネームを入力" value="${esc(localStorage.getItem('tonight_visitor_display_name')||'')}"><div class="rsvp-choice-grid">${choice('going','参加','行く予定！')}${choice('interested','興味あり','気になっている')}${choice('not-going','不参加','今回は参加しない')}</div><div class="rsvp-summary"><strong id="rsvpCount">参加表明を読み込み中…</strong><div id="rsvpParticipants" class="rsvp-participants"></div></div></section><div class="btn-row"><button class="btn secondary" id="eventShare">↗ イベントをシェア</button><button class="btn secondary" id="eventSwitchInline">イベントを変更</button></div>`;
     refreshRsvpList(ev.id);
   }
   async function refreshRsvpList(eventId){
     const count=$('#rsvpCount'), list=$('#rsvpParticipants'); if(!count||!list)return;
-    try{const res=await fetch(`/api/public/rsvp?eventId=${encodeURIComponent(eventId)}`,{cache:'no-store'});if(!res.ok)throw new Error('RSVP load failed');const payload=await res.json();count.textContent=`参加予定 ${payload.count||0}名`;
-      const names=(payload.participants||[]).map(x=>x.name).filter(Boolean);
-      list.innerHTML=names.length?names.map(name=>`<span class="rsvp-chip">${esc(name)}</span>`).join(''):'<span class="notice">まだ参加予定の人はいません。</span>';
-    }catch{count.textContent='参加予定を取得できませんでした';list.innerHTML='';}
+    try{const res=await fetch(`/api/public/rsvp?eventId=${encodeURIComponent(eventId)}&visitorId=${encodeURIComponent(visitorId)}`,{cache:'no-store'});if(!res.ok)throw new Error('RSVP load failed');const payload=await res.json();
+      if(payload.myStatus&&['going','interested','not-going'].includes(payload.myStatus)){saveRsvp(eventId,payload.myStatus);const nav=$('.bottom-nav');if(nav)nav.hidden=false;}
+      const people=payload.participants||[], counts={'going':0,'interested':0,'not-going':0}; people.forEach(p=>{if(counts[p.status]!==undefined)counts[p.status]++;});
+      count.textContent=`参加 ${counts.going}名 · 興味あり ${counts.interested}名 · 不参加 ${counts['not-going']}名`;
+      list.innerHTML=people.length?people.map(p=>`<span class="rsvp-chip"><b>${p.status==='going'?'参加':p.status==='interested'?'興味あり':'不参加'}</b> ${esc(p.name)}</span>`).join(''):'<span class="notice">まだ参加表明はありません。</span>';
+    }catch{count.textContent='参加表明を取得できませんでした';list.innerHTML='';}
   }
-  async function toggleRsvp(){
-    const ev=selected();if(!ev)return;
-    const going=isRsvped(ev.id);let name=$('#rsvpName')?.value.trim()||localStorage.getItem('tonight_visitor_display_name')||'';
-    if(!going&&!name){alert('一覧に表示する名前を入力してください。');$('#rsvpName')?.focus();return;}
+  async function setRsvpStatus(status){
+    const ev=selected();if(!ev||!['going','interested','not-going'].includes(status))return;
+    const name=$('#rsvpName')?.value.trim()||localStorage.getItem('tonight_visitor_display_name')||'';
+    if(!name){alert('一覧に表示する名前を入力してください。');$('#rsvpName')?.focus();return;}
     try{
-      const res=await fetch(`/api/public/rsvp?eventId=${encodeURIComponent(ev.id)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({visitorId,name,going:!going})});
+      const res=await fetch(`/api/public/rsvp?eventId=${encodeURIComponent(ev.id)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({visitorId,name,status})});
       if(!res.ok)throw new Error(await res.text());
-      saveRsvp(ev.id,!going);if(name)localStorage.setItem('tonight_visitor_display_name',name);renderEventDetail(ev);
+      saveRsvp(ev.id,status);localStorage.setItem('tonight_visitor_display_name',name);render();
     }catch(error){alert('参加表明を保存できませんでした。通信環境を確認して、もう一度お試しください。');}
   }
   function render(){
-    const back=$('#backBtn'), nav=$('.bottom-nav'), hasEvent=Boolean(selectedId);
+    const back=$('#backBtn'), nav=$('.bottom-nav'), hasEvent=Boolean(selectedId), unlocked=hasEvent&&hasResponded(selectedId);
     back.hidden=page==='home'||page==='select';
-    nav.hidden=page==='select'||!hasEvent;
+    nav.hidden=page==='select'||!unlocked;
     if(page==='select'){renderEventSelect();return;}
-    if(page==='detail'){const ev=data.events.find(e=>e.id===selectedId);if(ev)renderEventDetail(ev);else{page='select';renderEventSelect();}return;}
-    ({home:renderHome,schedule:renderSchedule,profiles:renderProfiles,drinks:renderDrinks,photos:renderPhotos,archive:renderArchive}[page]||renderHome)();
+    if(!hasEvent||!selected()){page='select';renderEventSelect();return;}
+    if(page==='home'||page==='detail'){renderEventDetail(selected());return;}
+    if(!unlocked){page='home';renderEventDetail(selected());return;}
+    ({schedule:renderSchedule,profiles:renderProfiles,drinks:renderDrinks,photos:renderPhotos,archive:renderArchive}[page]||renderEventDetail)(selected());
   }
   function openModal(html){modalRoot.innerHTML=`<div class="modal" data-dismiss="1"><div class="modal-box"><button class="modal-close" data-close aria-label="閉じる">×</button>${html}</div></div>`;}
   function performersFor(ev){
@@ -175,14 +189,15 @@
     const selectEvent=e.target.closest('[data-select-event]');if(selectEvent){selectedId=selectEvent.dataset.selectEvent;page='home';render();window.scrollTo(0,0);return;}
     if(e.target.closest('[data-switch-event],#eventSwitchTop')){selectedId=null;setPage('select');return;}
     const goto=e.target.closest('[data-goto]');if(goto){setPage(goto.dataset.goto);return;}
-    const event=e.target.closest('[data-event]');if(event){selectedId=event.dataset.event;page='detail';render();window.scrollTo(0,0);return;}
+    const event=e.target.closest('[data-event]');if(event){selectedId=event.dataset.event;page='home';render();window.scrollTo(0,0);return;}
     const act=e.target.closest('[data-act]');if(act){openAct(act.dataset.act);return;}
     const photo=e.target.closest('[data-photo]');if(photo){openModal(`<img src="${esc(photo.dataset.photo)}" alt="写真" style="width:100%;border-radius:12px">`);return;}
     if(e.target.closest('#shareBtn,#shareMain,#eventShare')){share();return;}
     if(e.target.closest('#noticeBtn')){enableNotices();return;}
-    if(e.target.closest('#rsvpBtn')){toggleRsvp();return;}
+    const rsvpChoice=e.target.closest('[data-rsvp-choice]');if(rsvpChoice){setRsvpStatus(rsvpChoice.dataset.rsvpChoice);return;}
     if(e.target.closest('#backBtn')){if(page==='detail'){setPage('home');return;}setPage('home');return;}
     if(e.target.closest('#backHome')){setPage('home');return;}
+    if(e.target.closest('#eventSwitchInline')){selectedId=null;setPage('select');return;}
     if(e.target.closest('#retry'))loadData();
   });
   window.addEventListener('hashchange',()=>{const match=location.hash.match(/event=([^&]+)/);if(match){selectedId=decodeURIComponent(match[1]);if(data.events.some(e=>e.id===selectedId)){page='home';render();}}});

@@ -31,3 +31,23 @@
  .performer-profile-cover,.performer-profile-cover img,.performer-profile-placeholder{min-height:0;height:auto;aspect-ratio:16/10}
  .performer-profile-body{padding:19px}
 }
+
+
+/* v5: horizontal event picker, event landing and three-way RSVP gate */
+.next-event-banner{display:flex;flex-direction:column;gap:5px;padding:17px 19px;margin:2px 0 24px;background:#111;color:#fff;border-radius:18px;box-shadow:var(--shadow)}
+.next-event-banner .eyebrow{color:#aaa}.next-event-banner strong{font-size:clamp(18px,3vw,24px);letter-spacing:-.035em}.next-event-banner>span{font-size:12px;color:#c9c9c9}
+.event-carousel{display:flex;gap:15px;overflow-x:auto;overflow-y:hidden;padding:3px 2px 18px;scroll-snap-type:x mandatory;scroll-padding-inline:2px;-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain}
+.event-carousel::-webkit-scrollbar{height:6px}.event-carousel::-webkit-scrollbar-thumb{background:#c9cbd0;border-radius:99px}
+.event-carousel .event-select-card{flex:0 0 clamp(250px,34vw,360px);scroll-snap-align:start;display:flex;flex-direction:column}
+.event-carousel .event-select-card>img,.event-carousel .event-select-placeholder{aspect-ratio:4/3}
+.event-carousel .event-select-copy{flex:1;align-content:start}
+.detail-flyer{max-height:min(62vh,620px);object-fit:contain;margin:0 0 22px;background:#e9eaee}
+.rsvp-gate{padding:clamp(17px,3vw,25px);margin:20px 0}.rsvp-gate .card-heading{font-size:clamp(20px,3vw,25px);margin:7px 0}
+.rsvp-name-label{display:block;font-size:12px;font-weight:800;margin:16px 0 7px}.rsvp-gate input{width:100%;border:1px solid var(--border);border-radius:12px;padding:13px 14px;font:inherit;font-size:15px}
+.rsvp-choice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:13px}
+.rsvp-choice{min-width:0;min-height:90px;border:1px solid #dedfe3;border-radius:15px;background:#f8f8fa;color:var(--text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:12px 8px;transition:.16s ease}
+.rsvp-choice strong{font-size:15px}.rsvp-choice small{font-size:11px;color:var(--sub);text-align:center}.rsvp-choice.is-selected{border:2px solid var(--blue);background:#eef6ff;color:#075eb5;box-shadow:0 0 0 3px #0071e314}
+.rsvp-summary{margin-top:18px}.rsvp-summary>strong{display:block;line-height:1.7}.rsvp-chip{display:inline-flex;gap:5px;align-items:center}.rsvp-chip b{font-size:10px;color:#555}
+.now-panel{margin:18px 0}.now-panel .notice{margin-bottom:0}
+@media(max-width:600px){.event-carousel .event-select-card{flex-basis:min(82vw,330px)}.rsvp-choice-grid{gap:7px}.rsvp-choice{min-height:82px;padding:10px 5px}.rsvp-choice strong{font-size:14px}.rsvp-choice small{font-size:10px}}
+@media(min-width:900px){.event-carousel .event-select-card{flex-basis:340px}}
