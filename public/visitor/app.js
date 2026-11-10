@@ -82,7 +82,7 @@
     const nextEventCard=next
       ? `<section class="select-next-event"><span class="header-next-label"><i class="live-dot"></i>NEXT EVENT</span><strong>${esc(dateLabel(next.date))}</strong><span class="header-next-name">${esc(next.name)}</span></section>`
       : `<section class="select-next-event"><span class="header-next-label">NEXT EVENT</span><strong>次回開催は調整中</strong></section>`;
-    app.innerHTML=`${nextEventCard}<div class="event-carousel" aria-label="イベント一覧">${upcoming.length?upcoming.map(ev=>`<button class="event-select-card" data-select-event="${esc(ev.id)}">${flyerUrl(ev)?`<img src="${flyerUrl(ev)}" alt="${esc(ev.name)} フライヤー">`:`<div class="event-select-placeholder"><img src="../TMPlogo.png" alt=""></div>`}<div class="event-select-copy"><div>${statusPill(ev)}</div><strong>${esc(ev.name)}</strong><small>${esc(dateLabel(ev.date))}${ev.venue?` · ${esc(ev.venue)}`:''}</small><span>イベントを開く　›</span></div></button>`).join(''):`<div class="empty"><strong>公開中のイベントはありません</strong>次回のtonight!をお楽しみに。</div>`}</div>${archivedEvents().length?`<div class="section-head"><h2>過去のイベント</h2><button data-page="archive">アーカイブを見る</button></div>`:''}<div class="footer">TONIGHT! · TSUKUBA MUSIC PROJECT</div>`;
+    app.innerHTML=`${nextEventCard}<div class="carousel-shell event-carousel-shell"><button class="carousel-arrow carousel-arrow-prev" type="button" data-carousel-move="-1" aria-label="前のイベント">‹</button><div class="event-carousel" aria-label="イベント一覧" tabindex="0">${upcoming.length?upcoming.map(ev=>`<button class="event-select-card" data-select-event="${esc(ev.id)}">${flyerUrl(ev)?`<img src="${flyerUrl(ev)}" alt="${esc(ev.name)} フライヤー">`:`<div class="event-select-placeholder"><img src="../TMPlogo.png" alt=""></div>`}<div class="event-select-copy"><div>${statusPill(ev)}</div><strong>${esc(ev.name)}</strong><small>${esc(dateLabel(ev.date))}${ev.venue?` · ${esc(ev.venue)}`:''}</small><span>イベントを開く　›</span></div></button>`).join(''):`<div class="empty"><strong>公開中のイベントはありません</strong>次回のtonight!をお楽しみに。</div>`}</div><button class="carousel-arrow carousel-arrow-next" type="button" data-carousel-move="1" aria-label="次のイベント">›</button></div>${archivedEvents().length?`<div class="section-head"><h2>過去のイベント</h2><button data-page="archive">アーカイブを見る</button></div>`:''}<div class="footer">TONIGHT! · TSUKUBA MUSIC PROJECT</div>`;
   }
   function renderHome(){
     const ev=selected(); if(!ev){page='select';renderEventSelect();return;} const upcoming=activeEvents().filter(e=>(e.date||'')>=localDate(new Date()));
@@ -219,7 +219,7 @@
       const ids=[...new Set(actsFor(ev).filter(a=>categoryFor(a)===category).flatMap(a=>(a.memberIds||[]).map(String)))];
       const members=ids.map(id=>all.find(m=>String(m.id)===id)).filter(Boolean);
       const filtered=profileFocusIds?.length?members.filter(m=>profileFocusIds.includes(String(m.id))):members;
-      return filtered.length?`<section class="profile-category"><div class="section-head"><h2>${category}</h2><span class="pill">${filtered.length}</span></div><div class="performer-profile-grid">${filtered.map(m=>renderCard(m,category)).join('')}</div></section>`:'';
+      return filtered.length?`<section class="profile-category"><div class="section-head"><h2>${category}</h2><span class="pill">${filtered.length}</span></div><div class="carousel-shell profile-carousel-shell"><button class="carousel-arrow carousel-arrow-prev" type="button" data-carousel-move="-1" aria-label="${category}を前へ">‹</button><div class="performer-profile-grid" tabindex="0" aria-label="${category}プロフィール">${filtered.map(m=>renderCard(m,category)).join('')}</div><button class="carousel-arrow carousel-arrow-next" type="button" data-carousel-move="1" aria-label="${category}を次へ">›</button></div></section>`:'';
     }).join('');
     app.innerHTML=`${headerTitle('出演者','カテゴリーごとに出演者のプロフィールをチェック。')}<div class="profile-event-label">${esc(ev.name)} · ${esc(dateLabel(ev.date))}</div>${groups||`<div class="empty"><strong>出演者プロフィールはまだありません</strong>プロフィールが登録されると、ここに表示されます。</div>`}`;
     profileFocusIds=null;
@@ -281,6 +281,18 @@
     }catch(error){if(!silent)app.innerHTML=`${headerTitle('情報を読み込めませんでした')}<div class="error">イベント情報の取得に失敗しました。通信環境を確認して、再読み込みしてください。<br><br><button class="btn" id="retry">再読み込み</button></div>`;}
   }
   document.addEventListener('click',e=>{
+    const carouselMove=e.target.closest('[data-carousel-move]');
+    if(carouselMove){
+      const shell=carouselMove.closest('.carousel-shell');
+      const track=shell?.querySelector('.event-carousel,.performer-profile-grid');
+      if(track){
+        const card=track.querySelector('.event-select-card,.performer-profile-card');
+        const gap=parseFloat(getComputedStyle(track).columnGap)||16;
+        const step=card?card.getBoundingClientRect().width+gap:track.clientWidth*0.85;
+        track.scrollBy({left:Number(carouselMove.dataset.carouselMove)*step,behavior:'smooth'});
+      }
+      return;
+    }
     const close=e.target.closest('[data-close]');if(close||e.target.matches('.modal[data-dismiss]')){modalRoot.innerHTML='';return;}
     const nav=e.target.closest('[data-page]');if(nav){setPage(nav.dataset.page);return;}
     const selectEvent=e.target.closest('[data-select-event]');if(selectEvent){selectedId=selectEvent.dataset.selectEvent;page='home';render();window.scrollTo(0,0);return;}

@@ -253,3 +253,63 @@
   box-shadow:0 0 0 0 rgba(53,209,124,.42);
   animation:green-dot-pulse 1.8s ease-in-out infinite!important;
 }
+
+
+/* v16: desktop carousel controls + firm one-card-at-a-time snapping */
+.carousel-shell{
+  position:relative;
+  display:flex;
+  align-items:center;
+  min-width:0;
+}
+.carousel-shell .event-carousel,
+.carousel-shell .performer-profile-grid{
+  flex:1 1 auto;
+  min-width:0;
+  scroll-snap-type:x mandatory!important;
+  scroll-snap-stop:always;
+  scroll-behavior:smooth;
+  overscroll-behavior-x:contain;
+  scroll-padding-inline:50%;
+  scrollbar-width:thin;
+}
+.carousel-shell .event-select-card,
+.carousel-shell .performer-profile-card{
+  scroll-snap-align:center!important;
+  scroll-snap-stop:always!important;
+}
+.carousel-arrow{
+  position:absolute;
+  z-index:5;
+  top:50%;
+  transform:translateY(-50%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:42px;
+  height:42px;
+  border:1px solid rgba(20,20,20,.10);
+  border-radius:50%;
+  background:rgba(255,255,255,.96);
+  color:#171717;
+  box-shadow:0 4px 18px rgba(0,0,0,.12);
+  font-size:28px;
+  line-height:1;
+  cursor:pointer;
+  transition:background .18s ease, opacity .18s ease, transform .18s ease;
+}
+.carousel-arrow:hover{background:#fff;transform:translateY(-50%) scale(1.06)}
+.carousel-arrow-prev{left:8px}
+.carousel-arrow-next{right:8px}
+.event-carousel-shell .event-carousel{padding-left:calc(max(8vw, (100% - 520px)/2) + 28px)!important;padding-right:calc(max(8vw, (100% - 520px)/2) + 28px)!important}
+.profile-carousel-shell .performer-profile-grid{padding-left:calc(max(8vw, (100% - 780px)/2) + 28px)!important;padding-right:calc(max(8vw, (100% - 780px)/2) + 28px)!important}
+@media(max-width:700px){
+  .carousel-arrow{width:34px;height:34px;font-size:23px}
+  .carousel-arrow-prev{left:4px}
+  .carousel-arrow-next{right:4px}
+  .event-carousel-shell .event-carousel,
+  .profile-carousel-shell .performer-profile-grid{
+    padding-left:42px!important;
+    padding-right:42px!important;
+  }
+}
