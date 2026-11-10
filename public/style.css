@@ -3688,3 +3688,14 @@ select:disabled { cursor: not-allowed; opacity: .65; }
   .admin-pulse-entry summary strong{font-size:10px;max-width:125px}
   .admin-pulse-entry>small{font-size:8px}
 }
+
+
+/* v25: persistent inline NOW/NEXT entries; divider only separates acts from shifts */
+.admin-pulse-entry{display:flex;flex-direction:column;align-items:flex-start;gap:2px;cursor:default;white-space:nowrap}
+.admin-pulse-entry strong{display:block;font-size:11px;font-weight:850;color:#171717;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.admin-pulse-entry small{display:block;margin:0;font-size:9px;font-weight:750;color:#777;white-space:nowrap}
+.admin-pulse-divider{width:1px;height:30px;background:#e5e5e5;flex:0 0 auto;align-self:center}
+@media(max-width:600px){
+  .admin-pulse-entry strong{font-size:10px;max-width:125px}
+  .admin-pulse-entry small{font-size:8px}
+}
