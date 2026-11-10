@@ -4075,15 +4075,15 @@ function nowHtml(tt, ev) {
   const actName = item => `${item.type === "その他" ? (item.customType || "その他") : (item.type || "DJ")}：${recordMemberDisplay(item)}`;
   const shiftName = item => `${item.role || "シフト"}：${recordMemberDisplay(item)}`;
   const nowItems = [
-    ...actNow.map(item => ({kind:"出番",name:actName(item)})),
-    ...shiftNow.map(item => ({kind:"シフト",name:shiftName(item)}))
+    ...actNow.map(item => ({kind:"出演",name:actName(item),time:scheduleRangeLabel(item,true)})),
+    ...shiftNow.map(item => ({kind:"シフト",name:shiftName(item),time:scheduleRangeLabel(item,false)}))
   ];
   const nextItems = [
-    ...(actNext ? [{kind:"出番",name:actName(actNext)}] : []),
-    ...(shiftNext ? [{kind:"シフト",name:shiftName(shiftNext)}] : [])
+    ...(actNext ? [{kind:"出演",name:actName(actNext),time:scheduleRangeLabel(actNext,true)}] : []),
+    ...(shiftNext ? [{kind:"シフト",name:shiftName(shiftNext),time:scheduleRangeLabel(shiftNext,false)}] : [])
   ];
   const renderItems = (items, label) => items.length
-    ? items.map(item => `<span class="admin-pulse-entry"><small>${label} · ${item.kind}</small><strong>${esc(item.name)}</strong></span>`).join("")
+    ? items.map(item => `<span class="admin-pulse-entry"><small>${label} · ${item.kind} · ${esc(item.time)}</small><strong>${esc(item.name)}</strong></span>`).join("")
     : `<span class="admin-pulse-empty">${label === "NOW" ? "現在の出演・シフトなし" : "次の予定なし"}</span>`;
   const hasSchedule = (tt.acts||[]).length || (tt.shifts||[]).length;
   return `<div class="admin-header-pulse">

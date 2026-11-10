@@ -394,3 +394,11 @@
     grid-template-columns:1fr;
   }
 }
+
+
+/* v18: visitor status pills stay completely stationary; no floating/bobbing motion */
+.header-now,
+.header-next-event,
+.select-next-event{
+  animation:none!important;
+}
