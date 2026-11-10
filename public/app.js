@@ -298,6 +298,7 @@ function renderReceptionTabs() {
 function getPageTitle(renderFunc) {
   const titles = new Map([
     [renderEventList, "tonight!"], [renderGuide, "使い方"], [renderEventNew, "新しい回を作成"],
+    [renderMemberProfileEdit, "出演者プロフィール編集"],
     [renderEventPage, "イベントホーム"], [renderEventEdit, "イベント情報"], [renderMembers, "メンバー名簿"],
     [renderSetup, "会計準備"], [renderHome, "受付ホーム"],
     [renderReceptionInput, "受付"], [renderDiscountScreen, "割引設定"],
@@ -3097,6 +3098,89 @@ function memberStats(memberId) {
   }
   return {attendance,dj,lastDate:lastDate||"—"};
 }
+let editingMemberId = null;
+function renderMemberProfileEdit() {
+  const member = (db.members || []).find(x => x.id === editingMemberId);
+  if (!member) { alert("メンバーが見つかりませんでした。"); back(); return; }
+  const photo = String(member.photo || "");
+  screen.innerHTML = `
+    <div class="member-profile-editor">
+      <div class="member-profile-editor-heading">
+        <div class="section-label">MEMBER PROFILE</div>
+        <h2>出演者プロフィール</h2>
+        <p class="sub-text">来場者用アプリに表示するプロフィールを編集します。</p>
+      </div>
+      <form id="memberProfileForm" class="card member-profile-form">
+        <section class="profile-form-section">
+          <h3>基本情報</h3>
+          <div class="profile-form-grid">
+            <label class="form-row"><span>本名・氏名 <b class="required-mark">必須</b></span><input id="profileName" required maxlength="80" value="${esc(member.name || "")}" placeholder="名前"></label>
+            <label class="form-row"><span>学年</span><input id="profileGrade" maxlength="30" value="${esc(member.grade || "")}" placeholder="例：3年"></label>
+            <label class="form-row profile-form-wide"><span>ニックネーム／DJネーム</span><input id="profileNickname" maxlength="80" value="${esc(member.nickname || "")}" placeholder="来場者に表示する名前"></label>
+          </div>
+        </section>
+        <section class="profile-form-section">
+          <h3>プロフィール写真</h3>
+          <label class="form-row"><span>写真URL</span><input id="profilePhoto" type="url" value="${esc(photo)}" placeholder="https://example.com/photo.jpg"></label>
+          <div class="profile-photo-preview-wrap"><img id="profilePhotoPreview" class="profile-photo-preview ${photo ? "" : "is-empty"}" src="${esc(photo)}" alt="プロフィール写真プレビュー" ${photo ? "" : "hidden"}><div id="profilePhotoEmpty" class="profile-photo-empty" ${photo ? "hidden" : ""}>写真URLを入力するとプレビューが表示されます</div></div>
+          <p class="sub-text">インターネット上からアクセスできる画像URLを指定してください。</p>
+        </section>
+        <section class="profile-form-section">
+          <h3>SNS・音楽</h3>
+          <div class="profile-form-grid">
+            <label class="form-row profile-form-wide"><span>Instagram</span><input id="profileInstagram" value="${esc(member.instagram || "")}" placeholder="URL または @ユーザー名"></label>
+            <label class="form-row"><span>好きな音楽ジャンル</span><textarea id="profileGenre" rows="3" placeholder="例：House、Hip-Hop、Jazz">${esc(member.genre || "")}</textarea></label>
+            <label class="form-row"><span>好きなアーティスト</span><textarea id="profileFavoriteArtists" rows="3" placeholder="例：Artist A、Artist B">${esc(member.favoriteArtists || "")}</textarea></label>
+            <label class="form-row profile-form-wide"><span>SpotifyプレイリストURL</span><input id="profileSpotify" type="url" value="${esc(member.spotifyPlaylist || "")}" placeholder="https://open.spotify.com/playlist/..."></label>
+          </div>
+        </section>
+        <section class="profile-form-section">
+          <h3>自己紹介</h3>
+          <label class="form-row"><span>プロフィール文</span><textarea id="profileBio" rows="5" maxlength="1000" placeholder="音楽や活動について紹介してください">${esc(member.bio || member.profile || "")}</textarea></label>
+        </section>
+        <div class="profile-form-actions"><button type="button" class="btn btn-secondary" id="cancelMemberProfile">キャンセル</button><button type="submit" class="btn btn-primary">変更を保存</button></div>
+      </form>
+    </div>`;
+  const photoInput = document.getElementById("profilePhoto");
+  const preview = document.getElementById("profilePhotoPreview");
+  const empty = document.getElementById("profilePhotoEmpty");
+  const updatePhotoPreview = () => {
+    const url = photoInput.value.trim();
+    if (!url) { preview.hidden = true; empty.hidden = false; return; }
+    preview.onload = () => { preview.hidden = false; empty.hidden = true; };
+    preview.onerror = () => { preview.hidden = true; empty.hidden = false; empty.textContent = "画像を読み込めません。URLを確認してください。"; };
+    preview.src = url;
+  };
+  photoInput.addEventListener("input", updatePhotoPreview);
+  if (photo) updatePhotoPreview();
+  document.getElementById("cancelMemberProfile").onclick = () => { editingMemberId = null; back(); };
+  document.getElementById("memberProfileForm").onsubmit = event => {
+    event.preventDefault();
+    const name = document.getElementById("profileName").value.trim();
+    if (!name) { alert("本名・氏名を入力してください。"); return; }
+    const photoUrl = photoInput.value.trim();
+    const instagram = document.getElementById("profileInstagram").value.trim();
+    const spotify = document.getElementById("profileSpotify").value.trim();
+    for (const [label, value] of [["プロフィール写真", photoUrl], ["Spotifyプレイリスト", spotify]]) {
+      if (value && !/^https:\/\//i.test(value)) { alert(`${label}は https:// から始まるURLを入力してください。`); return; }
+    }
+    member.name = name;
+    member.grade = document.getElementById("profileGrade").value.trim();
+    member.nickname = document.getElementById("profileNickname").value.trim();
+    member.photo = photoUrl;
+    member.instagram = instagram;
+    member.genre = document.getElementById("profileGenre").value.trim();
+    member.favoriteArtists = document.getElementById("profileFavoriteArtists").value.trim();
+    member.spotifyPlaylist = spotify;
+    member.bio = document.getElementById("profileBio").value.trim();
+    db.membersUpdated = Date.now();
+    persistDb();
+    editingMemberId = null;
+    alert("プロフィールを保存しました。");
+    back();
+  };
+}
+
 function renderMembers() {
   const gradeNumber = value => {
     const match = String(value || "").match(/\\d+/);
@@ -3150,7 +3234,7 @@ function renderMembers() {
   document.getElementById("selectAllMembers").onchange=e=>{screen.querySelectorAll("[data-select-member]").forEach(box=>box.checked=e.target.checked);updateBulkSelection();};
   document.getElementById("deleteSelectedMembers").onclick=()=>{const ids=[...screen.querySelectorAll("[data-select-member]:checked")].map(x=>x.dataset.selectMember);if(!ids.length)return;const names=ids.map(id=>db.members.find(m=>m.id===id)?.name).filter(Boolean);if(!confirm(`${ids.length}名のメンバーを名簿から一括削除しますか？\n\n${names.slice(0,8).join("、")}${names.length>8?` ほか${names.length-8}名`:""}\n\n参加予定リストからも除外されます。過去の受付・売上・出演履歴は保持されます。`))return;const removed=new Set(ids);db.members=(db.members||[]).filter(m=>!removed.has(m.id));for(const ev of db.events||[]){if(Array.isArray(ev.participants)){const next=ev.participants.filter(id=>!removed.has(id));if(next.length!==ev.participants.length){ev.participants=next;ev.u=ev.u||{};ev.u.meta=Date.now();}}}db.membersUpdated=Date.now();persistDb();alert(`${ids.length}名を名簿から削除しました。過去の履歴は保持されています。`);renderMembers();};
   document.getElementById("addMember").onclick=()=>{const name=document.getElementById("memberName").value.trim(),grade=document.getElementById("memberGrade").value.trim(),nickname=document.getElementById("memberNickname").value.trim();if(!name){alert("名前を入力してください");return;}const found=(db.members||[]).find(m=>m.name.trim().toLowerCase()===name.toLowerCase());if(found){found.grade=grade;found.nickname=nickname;alert("登録済みメンバーの学年・ニックネームを更新しました。");}else{db.members.push({id:uid(),name,grade,nickname});}db.membersUpdated=Date.now();persistDb();renderMembers();};
-  screen.querySelectorAll("[data-edit-member]").forEach(btn=>btn.onclick=()=>{const m=db.members.find(x=>x.id===btn.dataset.editMember);if(!m)return;const name=prompt("本名・氏名",m.name);if(name===null)return;const grade=prompt("学年",m.grade||"");if(grade===null)return;const nickname=prompt("ニックネーム／DJネーム（空欄なら本名表示）",m.nickname||"");if(nickname===null)return;if(!name.trim()){alert("名前を入力してください");return;}const photo=prompt("プロフィール写真URL（https:// で始まる画像URL）",m.photo||"");if(photo===null)return;const instagram=prompt("InstagramのURLまたはユーザー名",m.instagram||"");if(instagram===null)return;const genre=prompt("好きな音楽ジャンル（複数可）",m.genre||"");if(genre===null)return;const favoriteArtists=prompt("好きなアーティスト（複数可）",m.favoriteArtists||"");if(favoriteArtists===null)return;const spotifyPlaylist=prompt("SpotifyプレイリストURL",m.spotifyPlaylist||"");if(spotifyPlaylist===null)return;const bio=prompt("自己紹介",m.bio||m.profile||"");if(bio===null)return;m.name=name.trim();m.grade=grade.trim();m.nickname=nickname.trim();m.photo=photo.trim();m.instagram=instagram.trim();m.genre=genre.trim();m.favoriteArtists=favoriteArtists.trim();m.spotifyPlaylist=spotifyPlaylist.trim();m.bio=bio.trim();db.membersUpdated=Date.now();persistDb();renderMembers();});
+  screen.querySelectorAll("[data-edit-member]").forEach(btn=>btn.onclick=()=>{editingMemberId=btn.dataset.editMember;navigate(renderMemberProfileEdit);});
   screen.querySelectorAll("[data-delete-member]").forEach(btn=>btn.onclick=()=>{const m=db.members.find(x=>x.id===btn.dataset.deleteMember);if(!m||!confirm(`${m.name}を名簿から削除しますか？過去の履歴は保持されます。`))return;db.members=db.members.filter(x=>x.id!==m.id);db.membersUpdated=Date.now();persistDb();renderMembers();});
   document.getElementById("memberFile").onchange=async e=>{
     const file=e.target.files[0]; if(!file)return;

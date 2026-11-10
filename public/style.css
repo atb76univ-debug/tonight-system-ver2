@@ -3560,3 +3560,26 @@ select:disabled { cursor: not-allowed; opacity: .65; }
 @media (prefers-reduced-motion: reduce) {
   .bar-cart-dock-next { transition: none; }
 }
+
+/* ===== 出演者プロフィール専用編集ページ ===== */
+.member-profile-editor{max-width:860px;margin:0 auto;padding-bottom:32px}
+.member-profile-editor-heading{margin:8px 2px 18px}
+.member-profile-editor-heading h2{font-size:26px;letter-spacing:-.03em;margin:4px 0 6px}
+.member-profile-form{padding:clamp(16px,3vw,28px)}
+.profile-form-section{padding:4px 0 22px;margin-bottom:20px;border-bottom:1px solid var(--border)}
+.profile-form-section:last-of-type{border-bottom:0;margin-bottom:0}
+.profile-form-section h3{font-size:17px;font-weight:800;margin-bottom:16px}
+.profile-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}
+.profile-form-wide{grid-column:1/-1}
+.profile-form-section .form-row{min-width:0}
+.profile-form-section .form-row>span{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:750;color:var(--sub)}
+.profile-form-section input,.profile-form-section textarea{width:100%;min-width:0;padding:13px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--text);font:inherit;font-size:15px;line-height:1.5}
+.profile-form-section textarea{resize:vertical}
+.profile-form-section input:focus,.profile-form-section textarea:focus{outline:2px solid color-mix(in srgb,var(--primary) 22%,transparent);border-color:var(--primary)}
+.required-mark{font-size:10px;color:#fff;background:#d94848;border-radius:5px;padding:2px 6px}
+.profile-photo-preview-wrap{display:flex;align-items:center;justify-content:flex-start;min-height:120px;margin:8px 0 10px}
+.profile-photo-preview{width:120px;height:120px;object-fit:cover;border-radius:16px;background:#f0f0f0;border:1px solid var(--border)}
+.profile-photo-empty{display:grid;place-items:center;width:min(100%,320px);min-height:100px;padding:16px;text-align:center;color:var(--sub);font-size:13px;background:#fafafa;border:1px dashed var(--border);border-radius:14px}
+.profile-form-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:20px}
+.profile-form-actions .btn{width:auto;min-width:140px}
+@media(max-width:600px){.member-profile-editor-heading h2{font-size:22px}.profile-form-grid{grid-template-columns:1fr}.profile-form-wide{grid-column:auto}.profile-form-actions{position:sticky;bottom:0;margin:0 -16px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-top:1px solid var(--border);z-index:5}.profile-form-actions .btn{flex:1;min-width:0}.member-profile-form{padding:16px}}
