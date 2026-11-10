@@ -147,3 +147,12 @@
   .select-next-event{max-width:calc(100% - 24px);margin:18px auto 14px;padding:9px 14px;font-size:10px}
   .select-next-event .header-next-name{max-width:120px}
 }
+
+/* v12: static next-event pill; animate only the green status light */
+.select-next-event{animation:none!important;transform:none!important}
+.select-next-event .live-dot,
+.header-next-label .live-dot{animation:green-dot-pulse 1.8s ease-in-out infinite;box-shadow:0 0 0 0 rgba(53,209,124,.42)}
+@keyframes green-dot-pulse{
+  0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(53,209,124,.38)}
+  50%{opacity:.62;box-shadow:0 0 0 6px rgba(53,209,124,0)}
+}

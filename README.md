@@ -1,10 +1,13 @@
-# tonight! App v11
+# tonight! App v12
 
-## Change
-- The NEXT EVENT floating pill is rendered inside the event-selection page content only, above the horizontal event carousel.
-- It is not rendered in the global site header.
-- It disappears naturally when a visitor opens an event.
-- The selected-event NOW / NEXT pill in the header remains unchanged.
+## Visitor
+- Removed floating/bobbing animation from the next-event pill on the event-selection page.
+- The green status light now softly pulses; the pill itself remains stationary.
+
+## Admin
+- NOW / NEXT pill is placed inside the top header rather than below/overlapping it.
+- On narrow screens, it wraps to a second row that remains part of the header.
+- Removed floating/bobbing animation and applied the pulse animation to the green status light only.
 
 ## Deploy
-Replace `public/visitor/` in the existing Cloudflare project and deploy.
+Replace the project files with this package and deploy using the existing Cloudflare configuration.
