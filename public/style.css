@@ -3815,3 +3815,11 @@ button.primary:hover,button.is-primary:hover,.cashier-confirm:hover:not(:disable
 html,body,body *,body *::before,body *::after,button,input,select,textarea,optgroup,option{
   font-family:var(--tonight-font-stack)!important;
 }
+
+
+/* v45: visibly increase the inset of the five event-home menu buttons */
+.event-action-grid > .btn {
+  box-sizing: border-box !important;
+  padding-left: 36px !important;
+  padding-right: 36px !important;
+}
