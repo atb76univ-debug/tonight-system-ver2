@@ -141,7 +141,7 @@
   function renderPhotos(){
     const ev=selected();if(!ev){app.innerHTML=headerTitle('フォトギャラリー')+'<div class="empty">イベントを選択してください。</div>';return;}
     const images=[...(ev.gallery||[])];if(flyerUrl(ev))images.unshift(flyerUrl(ev));
-    app.innerHTML=`${headerTitle('フォトギャラリー',`${ev.name}のビジュアル`)}${images.length?`<div class="photo-grid">${images.map((src,i)=>`<img src="${esc(src)}" alt="${esc(ev.name)} フォト ${i+1}" loading="lazy" data-photo="${esc(src)}">`).join('')}</div>`:`<div class="empty"><strong>フォトはまだありません</strong>イベントの写真が公開されると、ここに追加されます。</div>`}<p class="notice">フォトの追加・公開はイベント運営によって行われます。</p>`;
+    app.innerHTML=`${headerTitle('フォトギャラリー',`${ev.name}のビジュアル`)}${images.length?`<div class="photo-grid">${images.map((src,i)=>`<img src="${esc(src)}" alt="${esc(ev.name)} フォト ${i+1}" loading="lazy" data-photo="${esc(src)}" data-photo-index="${i}">`).join('')}</div>`:`<div class="empty"><strong>フォトはまだありません</strong>イベントの写真が公開されると、ここに追加されます。</div>`}<p class="notice">フォトの追加・公開はイベント運営によって行われます。</p>`;
   }
   function renderArchive(){
     const archived=archivedEvents(), past=activeEvents().filter(e=>(e.date||'')<localDate(new Date())).reverse();
@@ -198,15 +198,41 @@
   function render(){
     const back=$('#backBtn'), nav=$('.bottom-nav'), hasEvent=Boolean(selectedId);
     back.hidden=page==='home'||page==='select';
-    nav.hidden=page==='select'||(!hasEvent&&page!=='archive');
+    nav.hidden=page==='select'||!hasEvent;
     if(page==='select'){renderEventSelect();updateHeaderNowNext();return;}
-    if(page==='archive'){renderArchive();updateHeaderNowNext();return;}
     if(!hasEvent||!selected()){page='select';renderEventSelect();updateHeaderNowNext();return;}
     if(page==='home'||page==='detail'){renderEventDetail(selected());updateHeaderNowNext();return;}
-    ({schedule:renderSchedule,profiles:renderProfiles,drinks:renderDrinks,photos:renderPhotos}[page]||renderEventDetail)(selected());
+    ({schedule:renderSchedule,profiles:renderProfiles,drinks:renderDrinks,photos:renderPhotos,archive:renderArchive}[page]||renderEventDetail)(selected());
     updateHeaderNowNext();
   }
   function openModal(html){modalRoot.innerHTML=`<div class="modal" data-dismiss="1"><div class="modal-box"><button class="modal-close" data-close aria-label="閉じる">×</button>${html}</div></div>`;}
+  function openPhotoViewer(images,index){
+    if(!Array.isArray(images)||!images.length)return;
+    let current=Math.max(0,Math.min(images.length-1,Number(index)||0));
+    const draw=()=>{
+      const src=images[current];
+      modalRoot.innerHTML=`<div class="photo-viewer" data-photo-viewer data-dismiss="1" role="dialog" aria-modal="true" aria-label="フォトビューア">
+        <button class="photo-viewer-close" type="button" data-close aria-label="閉じる">×</button>
+        <button class="photo-viewer-arrow photo-viewer-prev" type="button" data-photo-step="-1" aria-label="前の写真" ${current===0?'disabled':''}>‹</button>
+        <div class="photo-viewer-content">
+          <div class="photo-viewer-stage"><img src="${esc(src)}" alt="写真 ${current+1} / ${images.length}" draggable="false"></div>
+          <div class="photo-viewer-count">${current+1} / ${images.length}</div>
+        </div>
+        <button class="photo-viewer-arrow photo-viewer-next" type="button" data-photo-step="1" aria-label="次の写真" ${current===images.length-1?'disabled':''}>›</button>
+      </div>`;
+      const stage=modalRoot.querySelector('.photo-viewer-stage');
+      let startX=0,startY=0;
+      stage?.addEventListener('touchstart',e=>{const t=e.changedTouches[0];startX=t.clientX;startY=t.clientY;},{passive:true});
+      stage?.addEventListener('touchend',e=>{
+        const t=e.changedTouches[0],dx=t.clientX-startX,dy=t.clientY-startY;
+        if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.25)move(dx<0?1:-1);
+      },{passive:true});
+      stage?.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse')return;startX=e.clientX;startY=e.clientY;});
+      stage?.addEventListener('pointerup',e=>{if(e.pointerType!=='mouse')return;const dx=e.clientX-startX,dy=e.clientY-startY;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.25)move(dx<0?1:-1);});
+    };
+    const move=step=>{const next=current+step;if(next<0||next>=images.length)return;current=next;draw();};
+    draw();
+  }
   function performersFor(ev){
     const ids=[...new Set(actsFor(ev).flatMap(a=>(Array.isArray(a.memberIds)?a.memberIds:[]).map(String)))];
     const members=(ev?.members||[]);
@@ -304,14 +330,17 @@
       }
       return;
     }
-    const close=e.target.closest('[data-close]');if(close||e.target.matches('.modal[data-dismiss]')){modalRoot.innerHTML='';return;}
+    const close=e.target.closest('[data-close]');if(close||e.target.matches('.modal[data-dismiss],.photo-viewer[data-dismiss]')){modalRoot.innerHTML='';return;}
     const nav=e.target.closest('[data-page]');if(nav){setPage(nav.dataset.page);return;}
     const selectEvent=e.target.closest('[data-select-event]');if(selectEvent){selectedId=selectEvent.dataset.selectEvent;page='home';render();window.scrollTo(0,0);return;}
     if(e.target.closest('[data-switch-event],#eventSwitchTop')){selectedId=null;setPage('select');return;}
     const goto=e.target.closest('[data-goto]');if(goto){setPage(goto.dataset.goto);return;}
     const event=e.target.closest('[data-event]');if(event){selectedId=event.dataset.event;page='home';render();window.scrollTo(0,0);return;}
     const act=e.target.closest('[data-act]');if(act){openAct(act.dataset.act);return;}
-    const photo=e.target.closest('[data-photo]');if(photo){openModal(`<img src="${esc(photo.dataset.photo)}" alt="フォト" style="width:100%;border-radius:12px">`);return;}
+    const photoStep=e.target.closest('[data-photo-step]');
+    if(photoStep){const viewer=modalRoot.querySelector('[data-photo-viewer]');if(viewer){const images=[...(selected()?.gallery||[])];if(flyerUrl(selected()))images.unshift(flyerUrl(selected()));const count=Number(viewer.querySelector('.photo-viewer-count')?.textContent?.split('/')[0]||1)-1;openPhotoViewer(images,count+Number(photoStep.dataset.photoStep));}return;}
+    const photo=e.target.closest('[data-photo]');
+    if(photo){const images=[...(selected()?.gallery||[])];if(flyerUrl(selected()))images.unshift(flyerUrl(selected()));openPhotoViewer(images,Number(photo.dataset.photoIndex)||0);return;}
     if(e.target.closest('#shareBtn,#shareMain,#eventShare')){share();return;}
     if(e.target.closest('#noticeBtn')){enableNotices();return;}
     if(e.target.closest('#calendarAdd')){addToCalendar();return;}
@@ -321,6 +350,18 @@
     if(e.target.closest('#backHome')){setPage('home');return;}
     if(e.target.closest('#eventSwitchInline')){selectedId=null;setPage('select');return;}
     if(e.target.closest('#retry'))loadData();
+  });
+  document.addEventListener('keydown',e=>{
+    const viewer=modalRoot.querySelector('[data-photo-viewer]');
+    if(!viewer)return;
+    if(e.key==='Escape'){modalRoot.innerHTML='';return;}
+    if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
+      e.preventDefault();
+      const step=e.key==='ArrowRight'?1:-1;
+      const images=[...(selected()?.gallery||[])];if(flyerUrl(selected()))images.unshift(flyerUrl(selected()));
+      const current=Number(viewer.querySelector('.photo-viewer-count')?.textContent?.split('/')[0]||1)-1;
+      openPhotoViewer(images,current+step);
+    }
   });
   window.addEventListener('hashchange',()=>{const match=location.hash.match(/event=([^&]+)/);if(match){selectedId=decodeURIComponent(match[1]);if(data.events.some(e=>e.id===selectedId)){page='home';render();}}});
   const hash=location.hash.match(/event=([^&]+)/);if(hash){selectedId=decodeURIComponent(hash[1]);page='home';}

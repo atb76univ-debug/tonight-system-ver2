@@ -463,3 +463,51 @@
 .visitor-timeline-block.is-live strong{color:#171717}
 .visitor-timeline-block.is-live span{color:#526f9c}
 
+
+/* v33: centered full-screen photo viewer with swipe navigation */
+.photo-viewer{
+  position:fixed;inset:0;z-index:100;
+  display:flex;align-items:center;justify-content:center;
+  gap:clamp(8px,2vw,24px);
+  padding:max(64px,calc(env(safe-area-inset-top) + 56px)) 14px max(48px,calc(env(safe-area-inset-bottom) + 34px));
+  background:rgba(0,0,0,.90);
+  overscroll-behavior:contain;
+}
+.photo-viewer-content{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:min(100%,1100px);height:100%;min-width:0;min-height:0;
+}
+.photo-viewer-stage{
+  display:flex;align-items:center;justify-content:center;
+  width:100%;height:auto;flex:1 1 auto;min-height:0;touch-action:pan-y;
+  user-select:none;-webkit-user-select:none;
+}
+.photo-viewer-stage img{
+  display:block;max-width:100%;max-height:100%;
+  width:auto;height:auto;object-fit:contain;
+  border-radius:10px;box-shadow:0 12px 48px rgba(0,0,0,.28);
+  -webkit-user-drag:none;
+}
+.photo-viewer-close{
+  position:absolute;top:max(14px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));
+  z-index:2;width:42px;height:42px;border:0;border-radius:50%;
+  background:rgba(255,255,255,.94);color:#111;font-size:27px;line-height:1;
+  display:grid;place-items:center;
+}
+.photo-viewer-arrow{
+  flex:0 0 42px;width:42px;height:56px;border:0;border-radius:999px;
+  background:rgba(255,255,255,.16);color:white;font-size:42px;line-height:1;
+  display:grid;place-items:center;transition:background .15s;
+}
+.photo-viewer-arrow:not(:disabled):active{background:rgba(255,255,255,.32)}
+.photo-viewer-arrow:disabled{opacity:.22;cursor:default}
+.photo-viewer-count{
+  flex:0 0 auto;padding-top:12px;color:rgba(255,255,255,.88);
+  font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;
+}
+@media(max-width:600px){
+  .photo-viewer{gap:4px;padding-left:5px;padding-right:5px}
+  .photo-viewer-content{width:calc(100% - 72px)}
+  .photo-viewer-arrow{flex-basis:30px;width:30px;height:48px;font-size:34px;background:rgba(255,255,255,.12)}
+  .photo-viewer-stage img{max-width:100%;max-height:100%;border-radius:7px}
+}

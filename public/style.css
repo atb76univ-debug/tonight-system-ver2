@@ -3700,16 +3700,3 @@ select:disabled { cursor: not-allowed; opacity: .65; }
   .admin-pulse-entry small{font-size:8px}
 }
 
-
-/* Event photo gallery manager */
-.gallery-admin-card .sub-text{line-height:1.6;margin:0 0 12px}
-.gallery-upload-label{display:block;text-align:center;cursor:pointer;margin:12px 0}
-.gallery-admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:10px;margin-top:14px}
-.gallery-admin-item{min-width:0;background:#f7f7f8;border:1px solid #e5e5e5;border-radius:12px;overflow:hidden}
-.gallery-admin-item img{display:block;width:100%;aspect-ratio:1;object-fit:cover}
-.gallery-admin-actions{display:flex;align-items:center;gap:5px;padding:7px}
-.gallery-admin-actions span{font-size:12px;color:#666;margin-right:auto}
-.gallery-admin-actions button{border:1px solid #ddd;background:#fff;border-radius:7px;padding:5px 8px;font-size:12px}
-.gallery-admin-actions button:disabled{opacity:.35}
-.gallery-admin-actions button.danger{color:#c62828}
-.gallery-admin-status{margin-top:10px!important}

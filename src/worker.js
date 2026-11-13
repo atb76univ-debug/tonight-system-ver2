@@ -118,10 +118,6 @@ function mergeInto(target, source) {
       }
       existing.u.meta = Number(versions.meta || 0);
     }
-    if (Number(versions.gallery || 0) > Number(existing.u.gallery || 0)) {
-      existing.gallery = Array.isArray(incoming.gallery) ? structuredClone(incoming.gallery).slice(0, 60) : [];
-      existing.u.gallery = Number(versions.gallery || 0);
-    }
     const incomingNewer = Number(versions.rec || 0) > Number(existing.u.rec || 0);
     if (incoming.state || existing.state) {
       existing.state = incomingNewer
@@ -181,7 +177,7 @@ export class Store {
               price: Math.max(0, Number(product.price || 0)), soldOut: Boolean(product.soldOut) }));
           return { id: String(event.id), name: String(event.name || ''), date: String(event.date || ''),
             flyer: Number(event.flyer || 0), archived: Boolean(event.archived), acts, members: publicMembers,
-            products, offsetMinutes: Number(tt.offsetMinutes || 0), gallery: Array.isArray(event.gallery) ? event.gallery.filter(x => typeof x === 'string' && (/^https:\/\//.test(x) || /^\/api\/gallery\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+$/.test(x))).slice(0, 60) : [],
+            products, offsetMinutes: Number(tt.offsetMinutes || 0), gallery: Array.isArray(event.gallery) ? event.gallery.filter(x => typeof x === 'string' && /^https:\/\//.test(x)).slice(0, 60) : [],
             venue: String(event.venue || ''), description: String(event.description || '') };
         })
         .sort((a, b) => String(a.date).localeCompare(String(b.date)));
@@ -240,34 +236,6 @@ export class Store {
       return Response.json(current);
     }
 
-    const galleryMatch = path.match(/^\/gallery\/([A-Za-z0-9_-]+)\/([A-Za-z0-9_-]+)$/);
-    if (galleryMatch) {
-      const [, eventId, imageId] = galleryMatch;
-      const event = ((await this.state.storage.get('db')) || { events: [] }).events.find(item => String(item.id) === eventId && !item.deleted);
-      if (!event) return new Response('event not found', { status: 404 });
-      const key = `gallery:${eventId}:${imageId}`;
-      if (req.method === 'PUT') {
-        const buffer = await req.arrayBuffer();
-        if (!buffer.byteLength || buffer.byteLength > 1500000) return new Response('too large', { status: 413 });
-        const type = req.headers.get('Content-Type') || '';
-        if (!type.startsWith('image/')) return new Response('unsupported media', { status: 415 });
-        await this.state.storage.put(key, buffer);
-        await this.state.storage.put(key + ':type', 'image/jpeg');
-        return Response.json({ ok: true });
-      }
-      if (req.method === 'DELETE') {
-        await this.state.storage.delete(key);
-        await this.state.storage.delete(key + ':type');
-        return Response.json({ ok: true });
-      }
-      if (req.method === 'GET') {
-        const buffer = await this.state.storage.get(key);
-        if (!buffer) return new Response('not found', { status: 404 });
-        return new Response(buffer, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=3600' } });
-      }
-      return new Response('method not allowed', { status: 405 });
-    }
-
     const match = path.match(/^\/flyer\/([A-Za-z0-9]+)$/);
     if (match) {
       const key = 'fl:' + match[1];
@@ -300,7 +268,7 @@ export default {
       const response = await stub.fetch(new Request(innerUrl, request));
       return new Response(response.body, { status: response.status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     }
-    if (url.pathname === '/api/db' || (url.pathname.startsWith('/api/flyer/') || url.pathname.startsWith('/api/gallery/'))) {
+    if (url.pathname === '/api/db' || url.pathname.startsWith('/api/flyer/')) {
       const stub = env.STORE.get(env.STORE.idFromName('main'));
       const inner = new Request('https://do' + url.pathname.replace('/api', ''), request);
       const response = await stub.fetch(inner);
