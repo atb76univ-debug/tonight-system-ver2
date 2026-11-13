@@ -518,3 +518,10 @@
 html,body,body *,body *::before,body *::after,button,input,select,textarea,optgroup,option{
   font-family:"Noto Sans JP",sans-serif!important;
 }
+
+/* v39 typography: Helvetica / Arial with Noto Sans JP fallback */
+:root{--tonight-font-stack:Helvetica,Arial,"Noto Sans JP",sans-serif}
+html,body,body *,body *::before,body *::after,
+button,input,select,textarea,optgroup,option{
+  font-family:var(--tonight-font-stack)!important;
+}
