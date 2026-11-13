@@ -1,9 +1,8 @@
-# tonight! App v33
+# tonight! App v34
 
-## Visual refresh
-- Updated admin and visitor UI with an Apple Music-inspired visual language.
-- Unified typography, spacing, rounded cards, translucent navigation/header surfaces, and accent colors.
-- Preserved existing application features and data flow.
+- v33のApple Music風レイアウト・フォント・余白・カードデザインは維持。
+- アクセントカラーを従来の配色に戻しました。管理アプリはブラック基調、来場者アプリはブラック＋従来のブルーを使用します。
+- ボタン、リンク、選択中ナビゲーション、NOW表示などの赤い強調色を復元。
+- キャッシュバージョンを更新。
 
-## Deploy
-Deploy the full project using the existing Cloudflare Wrangler configuration.
+Deploy: 既存のCloudflareプロジェクトに本ZIPのファイルを反映し、`npm run deploy` を実行してください。

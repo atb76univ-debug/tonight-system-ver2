@@ -3717,7 +3717,7 @@ select:disabled { cursor: not-allowed; opacity: .65; }
 /* v33 — Apple Music-inspired visual refresh (admin) */
 :root{
   --bg:#f5f5f7;--card:#fff;--border:rgba(60,60,67,.12);--text:#1d1d1f;--sub:#86868b;
-  --primary:#fa233b;--success:#30a46c;--danger:#ff3b30;--radius:18px;
+  --primary:#111;--success:#22c55e;--danger:#ef4444;--radius:18px;
   --shadow:0 2px 12px rgba(0,0,0,.045),0 12px 32px rgba(0,0,0,.035);
 }
 html{background:var(--bg)}
@@ -3732,11 +3732,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text"
 button,.btn,input,select,textarea{font-family:inherit}
 button,.btn{transition:transform .16s ease,background .16s ease,box-shadow .16s ease,border-color .16s ease}
 button:active,.btn:active{transform:scale(.985)}
-.btn-primary,.primary-btn,.button-primary{background:#fa233b!important;color:#fff!important;border:0!important;border-radius:14px!important;box-shadow:0 5px 14px rgba(250,35,59,.16)}
+.btn-primary,.primary-btn,.button-primary{background:#111!important;color:#fff!important;border:0!important;border-radius:14px!important;box-shadow:0 5px 14px rgba(0,0,0,.12)}
 .btn-secondary,.secondary-btn{background:#f2f2f7!important;color:#1d1d1f!important;border:1px solid rgba(60,60,67,.1)!important;border-radius:14px!important}
 .btn-danger,.danger-btn{border-radius:14px!important}
 input,select,textarea{border:1px solid rgba(60,60,67,.16)!important;border-radius:12px!important;background:#fff!important;color:#1d1d1f!important;box-shadow:inset 0 1px 2px rgba(0,0,0,.025)}
-input:focus,select:focus,textarea:focus{outline:3px solid rgba(250,35,59,.13)!important;border-color:#fa233b!important}
+input:focus,select:focus,textarea:focus{outline:3px solid rgba(0,113,227,.13)!important;border-color:#0071e3!important}
 .icon-btn,.pulse-control,.schedule-switch-btn,.event-home-btn{border-radius:12px!important}
 .section-label,.sub-text,.muted{color:#86868b!important}
 .stat,.stat-card,.money-display,.discount-card,.counter-row,.gallery-admin-item{border-radius:16px!important}
