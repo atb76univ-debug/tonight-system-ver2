@@ -3808,3 +3808,10 @@ button.primary:hover,button.is-primary:hover,.cashier-confirm:hover:not(:disable
   border-color:#0071e3!important;
   color:#fff!important;
 }
+
+/* v44: improve event-menu button inset and use Hiragino Japanese typography */
+.event-action-grid .btn{padding:18px 22px!important}
+:root{--tonight-font-stack:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif}
+html,body,body *,body *::before,body *::after,button,input,select,textarea,optgroup,option{
+  font-family:var(--tonight-font-stack)!important;
+}

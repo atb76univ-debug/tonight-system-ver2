@@ -1,10 +1,7 @@
-# tonight! v38
+# tonight! v44
 
-## Changes
-- Unified typography across the admin and visitor applications using Noto Sans JP.
-- Loaded the variable Noto Sans JP web font from Google Fonts in both app entry pages.
-- Applied the font globally to all elements, controls, dialogs, and pseudo-elements.
-- Bumped static asset and visitor service-worker cache versions.
-
-## Deploy
-Deploy the full project as usual. Internet access is required for Google Fonts to load; the CSS fallback is sans-serif.
+- Based on v43; preserved existing application files and functionality.
+- Increased horizontal and vertical inner spacing for the event action buttons in the admin event screen.
+- Changed Japanese font stack to Hiragino Sans / Hiragino Kaku Gothic ProN, with Yu Gothic and Meiryo fallbacks.
+- Updated CSS/JS cache query tokens in both admin and visitor HTML pages.
+- No application JavaScript logic or worker behavior changed.
