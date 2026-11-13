@@ -1,5 +1,5 @@
 // ネットワーク優先。通信できない時だけ保存済みの画面を表示する（/api は対象外）
-const C = 'tonight-v33-yuinote-design';
+const C = 'tonight-v47';
 
 self.addEventListener('install', event => {
   event.waitUntil(self.skipWaiting());
