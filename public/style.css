@@ -3788,3 +3788,14 @@ input,select,textarea{border-radius:12px}
 .gallery-management-heading h2{font-size:clamp(28px,4vw,38px);font-weight:700;letter-spacing:-.055em}
 .gallery-count{background:#f0f0f2;color:#6e6e73;font-weight:650}
 @media(max-width:600px){#app{padding:18px 14px}.card{padding:18px;border-radius:17px}.topbar{padding:13px 15px}}
+
+
+/* v41: replace black primary actions with Apple's restrained blue accent */
+:root{--primary:#0071e3;--accent:#0071e3}
+.btn-primary,.primary-button,.button-primary,button.primary,button.is-primary,
+.cashier-confirm,.confirm-button,.submit-button{
+  background:#0071e3!important;border-color:#0071e3!important;color:#fff!important;
+}
+.btn-primary:hover,.primary-button:hover,.button-primary:hover,
+button.primary:hover,button.is-primary:hover,.cashier-confirm:hover:not(:disabled),
+.confirm-button:hover,.submit-button:hover{background:#0066cc!important;border-color:#0066cc!important}

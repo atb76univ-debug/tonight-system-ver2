@@ -568,3 +568,10 @@ html,body{background:var(--bg);color:var(--text);letter-spacing:-.012em}
 .rsvp-person{background:#fafafa;border:1px solid #ededee;border-radius:13px}
 .photo-viewer{background:rgba(0,0,0,.94)}
 @media(max-width:600px){#app{padding:20px 14px 28px}.page-title{font-size:32px}.card{padding:17px;border-radius:17px}.hero-card{border-radius:20px;min-height:300px}.hero-copy{padding:23px}.section-head{margin-top:29px}.timeline-visual-card{padding:14px}}
+
+
+/* v41: blue primary actions instead of black */
+:root{--primary:#0071e3;--blue:#0071e3}
+.btn:not(.secondary):not(.blue),.btn.blue{background:#0071e3!important;color:#fff!important;border-color:#0071e3!important}
+.btn:not(.secondary):not(.blue):hover,.btn.blue:hover{background:#0066cc!important;border-color:#0066cc!important}
+.event-switch-top{background:#f2f2f4!important;color:#1d1d1f!important}
