@@ -1,13 +1,10 @@
-# tonight! v34 — v32 features restored + centered photo viewer
+# tonight! v35
 
-## Restored v32 features
-- Admin event-page gallery manager: multi-upload, preview, reorder, delete.
-- Gallery JPEG resizing and Durable Object-backed storage API (GET/PUT/DELETE).
-- Independent gallery metadata synchronization.
-- Visitor archive page accessible from event selection without selecting an event.
-
-## Retained v33 feature
-- Centered full-screen photo viewer with horizontal swipe, arrows, count, and close controls.
+## v35 update
+- Moved the event photo gallery management UI out of the top of the event home page into a dedicated `フォトギャラリー管理` page.
+- Added an entry button to the event home action grid.
+- The dedicated page retains multi-image upload, JPEG resizing, preview, delete, and ordering controls.
+- Existing visitor gallery viewing, gallery API/storage, gallery metadata synchronization, archive navigation, and v34 photo viewer behavior are retained from v34.
 
 ## Deploy
-Deploy the entire project, including `src/worker.js`, because gallery uploads require the Worker API.
+Deploy the complete project as usual. This update changes the admin UI only; the existing Worker gallery API and storage implementation are retained unchanged.

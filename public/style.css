@@ -3714,3 +3714,30 @@ select:disabled { cursor: not-allowed; opacity: .65; }
 .gallery-admin-actions button:disabled{opacity:.35}
 .gallery-admin-actions button.danger{color:#c33}
 .gallery-admin-status{margin-top:10px!important}
+
+/* Dedicated event photo gallery management page */
+.gallery-management-page{display:flex;flex-direction:column;gap:16px;max-width:1100px;margin:0 auto;padding-bottom:28px}
+.gallery-management-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:8px 2px}
+.gallery-management-heading h2{margin:0;font-size:clamp(22px,4vw,30px);letter-spacing:-.03em}
+.gallery-management-heading p{margin:6px 0 0;color:#777;font-size:13px}
+.gallery-count{flex:0 0 auto;padding:7px 11px;border-radius:999px;background:#f0f2f5;color:#555;font-size:12px;font-weight:800}
+.gallery-upload-panel{margin:0}
+.gallery-upload-panel .sub-text{line-height:1.65}
+.gallery-upload-label{display:block;text-align:center;cursor:pointer;margin:14px 0 8px}
+.gallery-admin-status{margin-top:10px!important;min-height:1.2em}
+.gallery-management-list{background:#fff;border:1px solid #e6e7eb;border-radius:16px;padding:16px;box-shadow:0 2px 10px rgba(20,30,50,.04)}
+.gallery-list-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.gallery-list-heading h3{margin:0;font-size:17px}
+.gallery-list-heading span{font-size:12px;color:#777;font-weight:700}
+.gallery-admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:0}
+.gallery-admin-item{min-width:0;background:#f7f7f8;border:1px solid #e5e5e5;border-radius:12px;overflow:hidden}
+.gallery-admin-item img{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#eee}
+.gallery-admin-actions{display:flex;align-items:center;gap:5px;padding:7px}
+.gallery-admin-actions span{font-size:12px;color:#666;margin-right:auto}
+.gallery-admin-actions button{min-width:30px;min-height:30px;border:1px solid #ddd;border-radius:7px;background:#fff}
+.gallery-admin-actions button:disabled{opacity:.35}
+.gallery-admin-actions button.danger{color:#c33}
+.gallery-empty-state{grid-column:1/-1;text-align:center;padding:40px 16px;color:#444;background:#fafafa;border:1px dashed #d7d9de;border-radius:12px}
+.gallery-empty-state p{margin:8px 0 0;color:#888;font-size:13px}
+.gallery-back-button{max-width:360px;align-self:center}
+@media(max-width:600px){.gallery-management-heading{align-items:center}.gallery-management-list{padding:12px}.gallery-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.gallery-admin-actions{gap:4px;padding:6px}.gallery-admin-actions button{min-width:28px;min-height:28px}}

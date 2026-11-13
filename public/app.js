@@ -300,6 +300,7 @@ function getPageTitle(renderFunc) {
     [renderEventList, "tonight!"], [renderGuide, "使い方"], [renderEventNew, "新しい回を作成"],
     [renderMemberProfileEdit, "出演者プロフィール編集"],
     [renderEventPage, "イベントホーム"], [renderEventEdit, "イベント情報"], [renderMembers, "メンバー名簿"],
+    [renderGalleryManagement, "フォトギャラリー管理"],
     [renderSetup, "会計準備"], [renderHome, "受付ホーム"],
     [renderReceptionInput, "受付"], [renderDiscountScreen, "割引設定"],
     [renderPaymentScreen, "お支払い"], [renderChecklist, "受付確認"],
@@ -3017,16 +3018,6 @@ function renderEventPage() {
   screen.innerHTML = `
     ${url ? `<img class="flyer-hero" src="${url}" alt="フライヤー">` : `<div class="flyer-empty">フライヤー未登録</div>`}
     ${arc ? `<div class="banner">アーカイブ済み：変更すると「変更を保存しますか？」の確認が出ます${ctx.dirty ? "（未保存の変更あり）" : ""}</div>` : ""}
-    <div class="card gallery-admin-card">
-      <div class="card-title">フォトギャラリー管理</div>
-      <p class="sub-text">写真を追加すると来場者アプリの「フォト」に公開されます。JPEG形式に自動変換して保存します。</p>
-      <label class="btn btn-secondary full gallery-upload-label" for="eventGalleryFiles">＋ 写真を追加</label>
-      <input id="eventGalleryFiles" type="file" accept="image/*" multiple hidden>
-      <div class="gallery-admin-grid" id="eventGalleryGrid">
-        ${(Array.isArray(ev.gallery)?ev.gallery:[]).map((src,i)=>`<div class="gallery-admin-item"><img src="${esc(src)}" alt="ギャラリー写真 ${i+1}"><div class="gallery-admin-actions"><span>${i+1}</span><button type="button" data-gallery-up="${i}" ${i===0?'disabled':''}>↑</button><button type="button" data-gallery-down="${i}" ${i===ev.gallery.length-1?'disabled':''}>↓</button><button type="button" class="danger" data-gallery-delete="${i}">削除</button></div></div>`).join("") || `<div class="sub-text">写真はまだ登録されていません。</div>`}
-      </div>
-      <p class="sub-text gallery-admin-status" id="galleryAdminStatus" aria-live="polite">最大60枚まで登録できます。</p>
-    </div>
     <div class="card">
       <div class="card-title">${esc(ev.name)}</div>
       <div class="row"><span>開催日</span><strong>${esc(ev.date)}</strong></div>
@@ -3042,6 +3033,7 @@ function renderEventPage() {
       <button class="btn btn-primary" id="goBar"><span>バーカウンター</span><small>商品販売・ドリンク精算</small></button>
       <button class="btn btn-secondary" id="goTt"><span>タイムテーブル</span><small>出演スケジュール</small></button>
       <button class="btn btn-secondary" id="goShifts"><span>シフト</span><small>スタッフ配置・勤務時間</small></button>
+      <button class="btn btn-secondary" id="goGallery"><span>フォトギャラリー管理</span><small>写真の追加・削除・並べ替え</small></button>
     </div>
 
     <div class="card"><div class="card-title">参加予定メンバー</div><div class="sub-text">${(ev.participants||[]).length}名登録</div><div class="participant-home-list">${(ev.participants||[]).map(id=>{const m=(db.members||[]).find(x=>x.id===id);const done=(state.receptionHistory||[]).some(r=>(r.guests||[]).some(g=>g.type==="tmp"&&(g.memberId===id||(!g.memberId&&g.name===m?.name))));return `<span>${esc(m?memberDisplayName(m):"名簿から削除済み")} <b class="${done?"checked":"pending"}">${done?"受付済み":"未受付"}</b></span>`}).join("")||`<span class="sub-text">参加予定はまだ登録されていません。</span>`}</div></div>
@@ -3058,40 +3050,7 @@ function renderEventPage() {
   document.getElementById("exportEventCsv").onclick = downloadCurrentEventCsv;
   document.getElementById("editEv").onclick = () => navigate(renderEventEdit);
   document.getElementById("editPricing").onclick = () => navigate(renderEventPricing);
-  const galleryInput = document.getElementById("eventGalleryFiles");
-  if (galleryInput) galleryInput.onchange = async () => {
-    const files = [...(galleryInput.files || [])]; if (!files.length) return;
-    const status = document.getElementById("galleryAdminStatus");
-    for (const file of files) {
-      if (!file.type.startsWith("image/")) continue;
-      if ((ev.gallery || []).length >= 60) { alert("写真は最大60枚までです。"); break; }
-      if (status) status.textContent = `${file.name} をアップロード中…`;
-      const id = uid();
-      try {
-        const blob = await resizeGalleryImage(file);
-        const response = await fetch(`/api/gallery/${encodeURIComponent(ev.id)}/${encodeURIComponent(id)}`, {method:"PUT",headers:{"Content-Type":"image/jpeg"},body:blob});
-        if (!response.ok) throw new Error(`upload failed: ${response.status}`);
-        ev.gallery = [...(ev.gallery || []), `/api/gallery/${encodeURIComponent(ev.id)}/${encodeURIComponent(id)}`];
-        ev.u = ev.u || {}; ev.u.gallery = Date.now(); persistDb();
-      } catch (error) { console.error(error); alert(`${file.name} のアップロードに失敗しました。`); }
-    }
-    renderEventPage();
-  };
-  screen.querySelectorAll("[data-gallery-delete]").forEach(btn => btn.onclick = async () => {
-    const index = Number(btn.dataset.galleryDelete), src = (ev.gallery || [])[index];
-    if (!src || !confirm("この写真をギャラリーから削除しますか？")) return;
-    if (src.startsWith('/api/gallery/')) {
-      const response = await fetch(src, {method:"DELETE"});
-      if (!response.ok && response.status !== 404) { alert("写真を削除できませんでした。"); return; }
-    }
-    ev.gallery.splice(index,1); ev.u = ev.u || {}; ev.u.gallery = Date.now(); persistDb(); renderEventPage();
-  });
-  screen.querySelectorAll("[data-gallery-up],[data-gallery-down]").forEach(btn => btn.onclick = () => {
-    const from = Number(btn.dataset.galleryUp ?? btn.dataset.galleryDown), to = from + (btn.hasAttribute("data-gallery-up") ? -1 : 1);
-    if (!Array.isArray(ev.gallery) || to < 0 || to >= ev.gallery.length) return;
-    [ev.gallery[from],ev.gallery[to]] = [ev.gallery[to],ev.gallery[from]];
-    ev.u = ev.u || {}; ev.u.gallery = Date.now(); persistDb(); renderEventPage();
-  });
+  document.getElementById("goGallery").onclick = () => navigate(renderGalleryManagement);
   const sv = document.getElementById("saveEv");
   if (sv) sv.onclick = () => { if (confirm("変更を保存しますか？")) { commitCtx(); renderEventPage(); updateBackButton(); } };
   document.getElementById("arcEv").onclick = () => {
@@ -3110,6 +3069,75 @@ function renderEventPage() {
     ev.deleted = true; ev.u.meta = Date.now(); ctx = null; persistDb();
     pageHistory = []; navigate(renderEventList);
   };
+}
+
+
+function renderGalleryManagement() {
+  const ev = ctx?.ev;
+  if (!ev) { navigate(renderEventList); return; }
+  const gallery = Array.isArray(ev.gallery) ? ev.gallery : (ev.gallery = []);
+  screen.innerHTML = `
+    <div class="gallery-management-page">
+      <div class="gallery-management-heading">
+        <div><h2>フォトギャラリー管理</h2><p>${esc(ev.name)} ・ ${esc(ev.date)}</p></div>
+        <span class="gallery-count">${gallery.length} / 60 枚</span>
+      </div>
+      <div class="card gallery-upload-panel">
+        <div class="card-title">写真を追加</div>
+        <p class="sub-text">写真を追加すると来場者アプリの「フォト」に公開されます。複数枚をまとめて選択できます。画像はJPEG形式に変換して保存します。</p>
+        <label class="btn btn-primary full gallery-upload-label" for="eventGalleryFiles">＋ 写真を選択してアップロード</label>
+        <input id="eventGalleryFiles" type="file" accept="image/*" multiple hidden>
+        <p class="sub-text gallery-admin-status" id="galleryAdminStatus" aria-live="polite">最大60枚まで登録できます。</p>
+      </div>
+      <section class="gallery-management-list">
+        <div class="gallery-list-heading"><h3>公開中の写真</h3><span>${gallery.length} 枚</span></div>
+        <div class="gallery-admin-grid" id="eventGalleryGrid">
+          ${gallery.map((src,i)=>`<div class="gallery-admin-item"><img src="${esc(src)}" alt="ギャラリー写真 ${i+1}" loading="lazy"><div class="gallery-admin-actions"><span>${i+1}</span><button type="button" data-gallery-up="${i}" aria-label="上へ" ${i===0?'disabled':''}>↑</button><button type="button" data-gallery-down="${i}" aria-label="下へ" ${i===gallery.length-1?'disabled':''}>↓</button><button type="button" class="danger" data-gallery-delete="${i}">削除</button></div></div>`).join("") || `<div class="gallery-empty-state"><strong>写真はまだ登録されていません</strong><p>上のボタンからイベント写真を追加してください。</p></div>`}
+        </div>
+      </section>
+      <button class="btn btn-secondary full gallery-back-button" id="galleryBackHome">イベントホームに戻る</button>
+    </div>`;
+
+  const input = document.getElementById("eventGalleryFiles");
+  input.onchange = async () => {
+    const files = [...(input.files || [])].filter(file => file.type.startsWith("image/"));
+    if (!files.length) return;
+    const status = document.getElementById("galleryAdminStatus");
+    let uploaded = 0;
+    for (const file of files) {
+      if ((ev.gallery || []).length >= 60) { alert("写真は最大60枚までです。"); break; }
+      if (status) status.textContent = `${file.name} をアップロード中…`;
+      const id = uid();
+      try {
+        const blob = await resizeGalleryImage(file);
+        const response = await fetch(`/api/gallery/${encodeURIComponent(ev.id)}/${encodeURIComponent(id)}`, {method:"PUT",headers:{"Content-Type":"image/jpeg"},body:blob});
+        if (!response.ok) throw new Error(`upload failed: ${response.status}`);
+        ev.gallery = [...(ev.gallery || []), `/api/gallery/${encodeURIComponent(ev.id)}/${encodeURIComponent(id)}`];
+        ev.u = ev.u || {}; ev.u.gallery = Date.now(); persistDb(); uploaded++;
+      } catch (error) {
+        console.error(error); alert(`${file.name} のアップロードに失敗しました。`);
+      }
+    }
+    if (status) status.textContent = `${uploaded}枚の写真を追加しました。`;
+    renderGalleryManagement();
+  };
+
+  screen.querySelectorAll("[data-gallery-delete]").forEach(btn => btn.onclick = async () => {
+    const index = Number(btn.dataset.galleryDelete), src = (ev.gallery || [])[index];
+    if (!src || !confirm("この写真をギャラリーから削除しますか？")) return;
+    if (src.startsWith('/api/gallery/')) {
+      const response = await fetch(src, {method:"DELETE"});
+      if (!response.ok && response.status !== 404) { alert("写真を削除できませんでした。"); return; }
+    }
+    ev.gallery.splice(index,1); ev.u = ev.u || {}; ev.u.gallery = Date.now(); persistDb(); renderGalleryManagement();
+  });
+  screen.querySelectorAll("[data-gallery-up],[data-gallery-down]").forEach(btn => btn.onclick = () => {
+    const from = Number(btn.dataset.galleryUp ?? btn.dataset.galleryDown), to = from + (btn.hasAttribute("data-gallery-up") ? -1 : 1);
+    if (!Array.isArray(ev.gallery) || to < 0 || to >= ev.gallery.length) return;
+    [ev.gallery[from],ev.gallery[to]] = [ev.gallery[to],ev.gallery[from]];
+    ev.u = ev.u || {}; ev.u.gallery = Date.now(); persistDb(); renderGalleryManagement();
+  });
+  document.getElementById("galleryBackHome").onclick = () => navigate(renderEventPage);
 }
 
 
