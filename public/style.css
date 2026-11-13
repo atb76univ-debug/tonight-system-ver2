@@ -3741,3 +3741,10 @@ select:disabled { cursor: not-allowed; opacity: .65; }
 .gallery-empty-state p{margin:8px 0 0;color:#888;font-size:13px}
 .gallery-back-button{max-width:360px;align-self:center}
 @media(max-width:600px){.gallery-management-heading{align-items:center}.gallery-management-list{padding:12px}.gallery-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.gallery-admin-actions{gap:4px;padding:6px}.gallery-admin-actions button{min-width:28px;min-height:28px}}
+
+
+/* v38: unified typography — Noto Sans JP across the entire application */
+:root{--tonight-font-stack:"Noto Sans JP",sans-serif}
+html,body,body *,body *::before,body *::after,button,input,select,textarea,optgroup,option{
+  font-family:"Noto Sans JP",sans-serif!important;
+}
