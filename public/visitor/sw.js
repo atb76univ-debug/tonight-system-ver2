@@ -1,5 +1,5 @@
 // ネットワーク優先。通信できない時だけ保存済みの画面を表示する（/api は対象外）
-const C = 'tonight-v48';
+const C = 'tonight-v49';
 
 self.addEventListener('install', event => {
   event.waitUntil(self.skipWaiting());

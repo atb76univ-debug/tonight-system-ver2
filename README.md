@@ -8,3 +8,9 @@
 
 ## Deploy
 Deploy the complete project as usual. This update changes the admin UI only; the existing Worker gallery API and storage implementation are retained unchanged.
+
+
+## v36 fix
+- Visitor app now redraws the live schedule after the latest public database response has arrived, rather than before the asynchronous refresh completes.
+- Removed the premature timer redraw and refreshes NOW header after data fetch.
+- Bumped visitor asset and service-worker cache versions.

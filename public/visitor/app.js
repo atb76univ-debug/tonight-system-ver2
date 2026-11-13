@@ -313,10 +313,24 @@
   }
   async function copyUrl(url){try{await navigator.clipboard.writeText(url);alert('リンクをコピーしました！');}catch{prompt('このリンクをコピーしてください',url);}}
   async function loadData(silent=false){
-    try{const res=await fetch('/api/public/db',{cache:'no-store'});if(!res.ok)throw new Error(`HTTP ${res.status}`);const next=await res.json();data={events:Array.isArray(next.events)?next.events:[],updated:next.updated||0};
+    try{
+      const res=await fetch('/api/public/db',{cache:'no-store'});
+      if(!res.ok)throw new Error(`HTTP ${res.status}`);
+      const next=await res.json();
+      data={events:Array.isArray(next.events)?next.events:[],updated:next.updated||0};
       if(selectedId&&!data.events.some(e=>e.id===selectedId)){selectedId=null;page='select';}
-      if(!silent)render();
-    }catch(error){if(!silent)app.innerHTML=`${headerTitle('情報を読み込めませんでした')}<div class="error">イベント情報の取得に失敗しました。通信環境を確認して、再読み込みしてください。<br><br><button class="btn" id="retry">再読み込み</button></div>`;}
+      if(!silent){
+        render();
+      }else{
+        // Render only after the fresh response has arrived. Previously the 30s
+        // timer redrew the schedule before this request completed, leaving old times visible.
+        if(page==='schedule' && selected()) renderSchedule();
+        updateHeaderNowNext();
+        if(page==='home' && selectedId) refreshRsvpList(selectedId);
+      }
+    }catch(error){
+      if(!silent)app.innerHTML=`${headerTitle('情報を読み込めませんでした')}<div class="error">イベント情報の取得に失敗しました。通信環境を確認して、再読み込みしてください。<br><br><button class="btn" id="retry">再読み込み</button></div>`;
+    }
   }
   document.addEventListener('click',e=>{
     const carouselMove=e.target.closest('[data-carousel-move]');
@@ -366,6 +380,6 @@
   });
   window.addEventListener('hashchange',()=>{const match=location.hash.match(/event=([^&]+)/);if(match){selectedId=decodeURIComponent(match[1]);if(data.events.some(e=>e.id===selectedId)){page='home';render();}}});
   const hash=location.hash.match(/event=([^&]+)/);if(hash){selectedId=decodeURIComponent(hash[1]);page='home';}
-  loadData();refreshTimer=setInterval(()=>{loadData(true);checkReminders();checkNowPlayingNotice();updateHeaderNowNext();if(page==='schedule')renderSchedule();if(page==='home')refreshRsvpList(selectedId);},30000);
+  loadData();refreshTimer=setInterval(()=>{loadData(true);checkReminders();checkNowPlayingNotice();},30000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadData(true);});
 })();
