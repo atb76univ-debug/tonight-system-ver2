@@ -592,3 +592,7 @@ html,body{background:var(--bg);color:var(--text);letter-spacing:-.012em}
 html,body,body *,body *::before,body *::after,button,input,select,textarea,optgroup,option{
   font-family:var(--tonight-font-stack)!important;
 }
+
+/* v46: Noto Sans JP for Japanese text; preserve v45 spacing and interactions */
+:root{--tonight-font-stack:Helvetica,Arial,"Noto Sans JP",sans-serif}
+html,body,body *,body *::before,body *::after,button,input,select,textarea,optgroup,option{font-family:var(--tonight-font-stack)!important}

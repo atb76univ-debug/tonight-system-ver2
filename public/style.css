@@ -3823,3 +3823,7 @@ html,body,body *,body *::before,body *::after,button,input,select,textarea,optgr
   padding-left: 36px !important;
   padding-right: 36px !important;
 }
+
+/* v46: Noto Sans JP for Japanese text; preserve v45 spacing and interactions */
+:root{--tonight-font-stack:Helvetica,Arial,"Noto Sans JP",sans-serif}
+html,body,body *,body *::before,body *::after,button,input,select,textarea,optgroup,option{font-family:var(--tonight-font-stack)!important}
