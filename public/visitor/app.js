@@ -198,11 +198,12 @@
   function render(){
     const back=$('#backBtn'), nav=$('.bottom-nav'), hasEvent=Boolean(selectedId);
     back.hidden=page==='home'||page==='select';
-    nav.hidden=page==='select'||!hasEvent;
+    nav.hidden=page==='select'||(!hasEvent&&page!=='archive');
     if(page==='select'){renderEventSelect();updateHeaderNowNext();return;}
+    if(page==='archive'){renderArchive();updateHeaderNowNext();return;}
     if(!hasEvent||!selected()){page='select';renderEventSelect();updateHeaderNowNext();return;}
     if(page==='home'||page==='detail'){renderEventDetail(selected());updateHeaderNowNext();return;}
-    ({schedule:renderSchedule,profiles:renderProfiles,drinks:renderDrinks,photos:renderPhotos,archive:renderArchive}[page]||renderEventDetail)(selected());
+    ({schedule:renderSchedule,profiles:renderProfiles,drinks:renderDrinks,photos:renderPhotos}[page]||renderEventDetail)(selected());
     updateHeaderNowNext();
   }
   function openModal(html){modalRoot.innerHTML=`<div class="modal" data-dismiss="1"><div class="modal-box"><button class="modal-close" data-close aria-label="閉じる">×</button>${html}</div></div>`;}

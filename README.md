@@ -1,19 +1,13 @@
-# tonight! App update v33
+# tonight! v34 — v32 features restored + centered photo viewer
 
-## Visitor photo viewer
-- Changed photo enlargement from the bottom-aligned generic modal to a centered, full-screen dark photo viewer.
-- Added horizontal touch swipe navigation between gallery images.
-- Added previous/next arrow controls and current photo count.
-- Added Escape and keyboard arrow navigation for desktop.
-- Added close button and backdrop click dismissal.
-- Preserved the existing photo grid and gallery data format.
-- Bumped visitor CSS/JS query versions and service-worker cache version.
+## Restored v32 features
+- Admin event-page gallery manager: multi-upload, preview, reorder, delete.
+- Gallery JPEG resizing and Durable Object-backed storage API (GET/PUT/DELETE).
+- Independent gallery metadata synchronization.
+- Visitor archive page accessible from event selection without selecting an event.
+
+## Retained v33 feature
+- Centered full-screen photo viewer with horizontal swipe, arrows, count, and close controls.
 
 ## Deploy
-Replace the matching files in the existing Cloudflare project and deploy:
-- `public/visitor/app.js`
-- `public/visitor/style.css`
-- `public/visitor/index.html`
-- `public/visitor/sw.js`
-
-No Worker or database migration is required for this UI-only update.
+Deploy the entire project, including `src/worker.js`, because gallery uploads require the Worker API.

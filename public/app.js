@@ -2646,11 +2646,12 @@ function mergeInto(t, s) {
     o.bar.voidedSales = mergedBarTransactions.voidedSales;
     o.bar.deletedSales = mergedBarTransactions.deletedSales;
     if ((eu.tt || 0) > (o.u.tt || 0)) { o.tt = structuredClone(e.tt); o.u.tt = eu.tt; }
+    if ((eu.gallery || 0) > (o.u.gallery || 0)) { o.gallery = structuredClone(Array.isArray(e.gallery) ? e.gallery : []); o.u.gallery = eu.gallery; }
   }
   return t;
 }
 function dbSig() {
-  return "members=" + (db.membersUpdated || 0) + ":" + (db.members || []).map(m => `${m.id}:${m.name}:${m.grade}:${m.nickname||""}`).join("|") + "||lineup=" + (db.drinkLineup || []).map(p => `${p.id}:${p.name}:${p.price}`).join("|") + ":" + (db.drinkLineupUpdated || 0) + "||" + db.events.map(e => e.id + ":" + ["meta", "rec", "bar", "tt"].map(p => (e.u || {})[p] || 0).join(",") + ":sales=" + (e.bar?.sales || []).map(x => x.id).sort().join(".") + ":deletedSales=" + (e.bar?.deletedSales || []).map(x => `${x.sale?.id}:${x.deletedAt}:${x.restoredAt||0}`).sort().join(".") + ":hist=" + (e.state?.receptionHistory || []).map(x => x.id).sort().join(".") + ":deletedRec=" + (e.state?.deletedReceptionHistory || []).map(x => `${x.entry?.id}:${x.deletedAt}:${x.restoredAt||0}`).sort().join(".") + ":reset=" + Number(e.bar?.resetAt || 0)).join("|");
+  return "members=" + (db.membersUpdated || 0) + ":" + (db.members || []).map(m => `${m.id}:${m.name}:${m.grade}:${m.nickname||""}`).join("|") + "||lineup=" + (db.drinkLineup || []).map(p => `${p.id}:${p.name}:${p.price}`).join("|") + ":" + (db.drinkLineupUpdated || 0) + "||" + db.events.map(e => e.id + ":" + ["meta", "rec", "bar", "tt", "gallery"].map(p => (e.u || {})[p] || 0).join(",") + ":sales=" + (e.bar?.sales || []).map(x => x.id).sort().join(".") + ":deletedSales=" + (e.bar?.deletedSales || []).map(x => `${x.sale?.id}:${x.deletedAt}:${x.restoredAt||0}`).sort().join(".") + ":hist=" + (e.state?.receptionHistory || []).map(x => x.id).sort().join(".") + ":deletedRec=" + (e.state?.deletedReceptionHistory || []).map(x => `${x.entry?.id}:${x.deletedAt}:${x.restoredAt||0}`).sort().join(".") + ":reset=" + Number(e.bar?.resetAt || 0)).join("|");
 }
 function setSync(t) { const e = document.getElementById("sync"); if (e) e.textContent = t; }
 function saveLocalDb() { try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch {} }
@@ -2756,6 +2757,23 @@ function resizeImage(file, max = 900) {
     img.src = url;
   });
 }
+async function resizeGalleryImage(file, max = 1600) {
+  return new Promise((resolve, reject) => {
+    const image = new Image(), objectUrl = URL.createObjectURL(file);
+    image.onload = () => {
+      const scale = Math.min(1, max / Math.max(image.width, image.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(objectUrl);
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("image conversion failed")), "image/jpeg", 0.84);
+    };
+    image.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("image load failed")); };
+    image.src = objectUrl;
+  });
+}
+
 async function uploadFlyer(ev, file) {
   try {
     const blob = await resizeImage(file);
@@ -2999,6 +3017,16 @@ function renderEventPage() {
   screen.innerHTML = `
     ${url ? `<img class="flyer-hero" src="${url}" alt="フライヤー">` : `<div class="flyer-empty">フライヤー未登録</div>`}
     ${arc ? `<div class="banner">アーカイブ済み：変更すると「変更を保存しますか？」の確認が出ます${ctx.dirty ? "（未保存の変更あり）" : ""}</div>` : ""}
+    <div class="card gallery-admin-card">
+      <div class="card-title">フォトギャラリー管理</div>
+      <p class="sub-text">写真を追加すると来場者アプリの「フォト」に公開されます。JPEG形式に自動変換して保存します。</p>
+      <label class="btn btn-secondary full gallery-upload-label" for="eventGalleryFiles">＋ 写真を追加</label>
+      <input id="eventGalleryFiles" type="file" accept="image/*" multiple hidden>
+      <div class="gallery-admin-grid" id="eventGalleryGrid">
+        ${(Array.isArray(ev.gallery)?ev.gallery:[]).map((src,i)=>`<div class="gallery-admin-item"><img src="${esc(src)}" alt="ギャラリー写真 ${i+1}"><div class="gallery-admin-actions"><span>${i+1}</span><button type="button" data-gallery-up="${i}" ${i===0?'disabled':''}>↑</button><button type="button" data-gallery-down="${i}" ${i===ev.gallery.length-1?'disabled':''}>↓</button><button type="button" class="danger" data-gallery-delete="${i}">削除</button></div></div>`).join("") || `<div class="sub-text">写真はまだ登録されていません。</div>`}
+      </div>
+      <p class="sub-text gallery-admin-status" id="galleryAdminStatus" aria-live="polite">最大60枚まで登録できます。</p>
+    </div>
     <div class="card">
       <div class="card-title">${esc(ev.name)}</div>
       <div class="row"><span>開催日</span><strong>${esc(ev.date)}</strong></div>
@@ -3030,6 +3058,40 @@ function renderEventPage() {
   document.getElementById("exportEventCsv").onclick = downloadCurrentEventCsv;
   document.getElementById("editEv").onclick = () => navigate(renderEventEdit);
   document.getElementById("editPricing").onclick = () => navigate(renderEventPricing);
+  const galleryInput = document.getElementById("eventGalleryFiles");
+  if (galleryInput) galleryInput.onchange = async () => {
+    const files = [...(galleryInput.files || [])]; if (!files.length) return;
+    const status = document.getElementById("galleryAdminStatus");
+    for (const file of files) {
+      if (!file.type.startsWith("image/")) continue;
+      if ((ev.gallery || []).length >= 60) { alert("写真は最大60枚までです。"); break; }
+      if (status) status.textContent = `${file.name} をアップロード中…`;
+      const id = uid();
+      try {
+        const blob = await resizeGalleryImage(file);
+        const response = await fetch(`/api/gallery/${encodeURIComponent(ev.id)}/${encodeURIComponent(id)}`, {method:"PUT",headers:{"Content-Type":"image/jpeg"},body:blob});
+        if (!response.ok) throw new Error(`upload failed: ${response.status}`);
+        ev.gallery = [...(ev.gallery || []), `/api/gallery/${encodeURIComponent(ev.id)}/${encodeURIComponent(id)}`];
+        ev.u = ev.u || {}; ev.u.gallery = Date.now(); persistDb();
+      } catch (error) { console.error(error); alert(`${file.name} のアップロードに失敗しました。`); }
+    }
+    renderEventPage();
+  };
+  screen.querySelectorAll("[data-gallery-delete]").forEach(btn => btn.onclick = async () => {
+    const index = Number(btn.dataset.galleryDelete), src = (ev.gallery || [])[index];
+    if (!src || !confirm("この写真をギャラリーから削除しますか？")) return;
+    if (src.startsWith('/api/gallery/')) {
+      const response = await fetch(src, {method:"DELETE"});
+      if (!response.ok && response.status !== 404) { alert("写真を削除できませんでした。"); return; }
+    }
+    ev.gallery.splice(index,1); ev.u = ev.u || {}; ev.u.gallery = Date.now(); persistDb(); renderEventPage();
+  });
+  screen.querySelectorAll("[data-gallery-up],[data-gallery-down]").forEach(btn => btn.onclick = () => {
+    const from = Number(btn.dataset.galleryUp ?? btn.dataset.galleryDown), to = from + (btn.hasAttribute("data-gallery-up") ? -1 : 1);
+    if (!Array.isArray(ev.gallery) || to < 0 || to >= ev.gallery.length) return;
+    [ev.gallery[from],ev.gallery[to]] = [ev.gallery[to],ev.gallery[from]];
+    ev.u = ev.u || {}; ev.u.gallery = Date.now(); persistDb(); renderEventPage();
+  });
   const sv = document.getElementById("saveEv");
   if (sv) sv.onclick = () => { if (confirm("変更を保存しますか？")) { commitCtx(); renderEventPage(); updateBackButton(); } };
   document.getElementById("arcEv").onclick = () => {
