@@ -3713,35 +3713,3 @@ select:disabled { cursor: not-allowed; opacity: .65; }
 .gallery-admin-actions button:disabled{opacity:.35}
 .gallery-admin-actions button.danger{color:#c62828}
 .gallery-admin-status{margin-top:10px!important}
-
-/* v33 — Apple Music-inspired visual refresh (admin) */
-:root{
-  --bg:#f5f5f7;--card:#fff;--border:rgba(60,60,67,.12);--text:#1d1d1f;--sub:#86868b;
-  --primary:#111;--success:#22c55e;--danger:#ef4444;--radius:18px;
-  --shadow:0 2px 12px rgba(0,0,0,.045),0 12px 32px rgba(0,0,0,.035);
-}
-html{background:var(--bg)}
-body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif!important;background:var(--bg)!important;color:var(--text);letter-spacing:-.012em;-webkit-font-smoothing:antialiased}
-.topbar{background:rgba(255,255,255,.88)!important;backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border-bottom:1px solid rgba(60,60,67,.09);box-shadow:0 1px 10px rgba(0,0,0,.025)!important;padding:14px 20px!important}
-.topbar h1,#pageTitle{font-size:22px!important;font-weight:800!important;letter-spacing:-.045em;color:#1d1d1f}
-#app{max-width:1120px!important;padding:24px!important}
-.card,.panel,.settings-card,.gallery-admin-card,.stat-card,.reception-card{border:1px solid rgba(60,60,67,.07);border-radius:20px!important;box-shadow:var(--shadow)!important;background:#fff}
-.card{padding:22px!important}
-.card-title,.section-title,h2{letter-spacing:-.035em}
-.card-title{font-size:19px!important;font-weight:800!important}
-button,.btn,input,select,textarea{font-family:inherit}
-button,.btn{transition:transform .16s ease,background .16s ease,box-shadow .16s ease,border-color .16s ease}
-button:active,.btn:active{transform:scale(.985)}
-.btn-primary,.primary-btn,.button-primary{background:#111!important;color:#fff!important;border:0!important;border-radius:14px!important;box-shadow:0 5px 14px rgba(0,0,0,.12)}
-.btn-secondary,.secondary-btn{background:#f2f2f7!important;color:#1d1d1f!important;border:1px solid rgba(60,60,67,.1)!important;border-radius:14px!important}
-.btn-danger,.danger-btn{border-radius:14px!important}
-input,select,textarea{border:1px solid rgba(60,60,67,.16)!important;border-radius:12px!important;background:#fff!important;color:#1d1d1f!important;box-shadow:inset 0 1px 2px rgba(0,0,0,.025)}
-input:focus,select:focus,textarea:focus{outline:3px solid rgba(0,113,227,.13)!important;border-color:#0071e3!important}
-.icon-btn,.pulse-control,.schedule-switch-btn,.event-home-btn{border-radius:12px!important}
-.section-label,.sub-text,.muted{color:#86868b!important}
-.stat,.stat-card,.money-display,.discount-card,.counter-row,.gallery-admin-item{border-radius:16px!important}
-.gallery-admin-item{background:#f5f5f7!important;border-color:rgba(60,60,67,.08)!important}
-.gallery-admin-actions button{border-radius:9px!important}
-.event-pulse{border-radius:16px!important;box-shadow:0 6px 24px rgba(0,0,0,.09)}
-@media(max-width:760px){#app{padding:16px!important}.topbar{padding:12px 14px!important}.card{padding:18px!important}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}

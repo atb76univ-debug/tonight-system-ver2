@@ -1,8 +1,13 @@
-# tonight! App v34
+# tonight! App update v32
 
-- v33のApple Music風レイアウト・フォント・余白・カードデザインは維持。
-- アクセントカラーを従来の配色に戻しました。管理アプリはブラック基調、来場者アプリはブラック＋従来のブルーを使用します。
-- ボタン、リンク、選択中ナビゲーション、NOW表示などの赤い強調色を復元。
-- キャッシュバージョンを更新。
+## Changes
+- Added event photo gallery management to the admin event page: multi-image upload, preview, ordering, and deletion.
+- Gallery photos are resized to JPEG and stored in the existing Durable Object storage; no R2 binding is required.
+- Added gallery image GET/PUT/DELETE API handling and synchronized gallery metadata independently to avoid unrelated event edits overwriting it.
+- Fixed the visitor archive route so the archive can open from the event-selection/top page even when no event is selected.
+- Bumped visitor service-worker cache and asset query versions.
 
-Deploy: 既存のCloudflareプロジェクトに本ZIPのファイルを反映し、`npm run deploy` を実行してください。
+## Deploy
+Replace the matching `public/` files and `src/worker.js` in the existing Cloudflare project, then deploy with `npm run deploy`.
+
+The gallery API and metadata changes require deploying the updated Worker as well as the static assets.
