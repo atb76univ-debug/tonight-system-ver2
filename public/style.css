@@ -3799,3 +3799,21 @@ input,select,textarea{border-radius:12px}
 .btn-primary:hover,.primary-button:hover,.button-primary:hover,
 button.primary:hover,button.is-primary:hover,.cashier-confirm:hover:not(:disabled),
 .confirm-button:hover,.submit-button:hover{background:#0066cc!important;border-color:#0066cc!important}
+
+/* v42: improve button breathing room and keep the blue clean on hover */
+.event-action-grid .btn{
+  padding:18px 24px!important;
+}
+.btn,.btn-primary,.primary-button,.button-primary,button.primary,button.is-primary{
+  padding-inline:22px;
+}
+.btn-primary:hover,.primary-button:hover,.button-primary:hover,
+button.primary:hover,button.is-primary:hover,.cashier-confirm:hover:not(:disabled),
+.confirm-button:hover,.submit-button:hover{
+  background:#0071e3!important;
+  border-color:#0071e3!important;
+  color:#fff!important;
+  filter:brightness(1.04);
+  transform:none!important;
+  box-shadow:none!important;
+}
