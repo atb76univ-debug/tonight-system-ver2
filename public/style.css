@@ -3755,3 +3755,36 @@ html,body,body *,body *::before,body *::after,
 button,input,select,textarea,optgroup,option{
   font-family:var(--tonight-font-stack)!important;
 }
+
+/* v40: editorial, restrained visual system inspired by Apple's product pages */
+:root{
+  --bg:#f5f5f7;
+  --card:#ffffff;
+  --border:#e5e5e7;
+  --text:#1d1d1f;
+  --sub:#6e6e73;
+  --primary:#1d1d1f;
+  --success:#248a52;
+  --danger:#d93025;
+  --radius:20px;
+  --shadow:0 1px 2px rgba(0,0,0,.025),0 8px 28px rgba(0,0,0,.035);
+}
+html,body{background:var(--bg);color:var(--text);letter-spacing:-.012em}
+.topbar{background:rgba(255,255,255,.88);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,.06);box-shadow:none;padding:15px 20px}
+.topbar h1{font-size:21px;font-weight:700;letter-spacing:-.045em}
+#app{max-width:1040px;padding:26px 22px}
+.card{border:1px solid rgba(0,0,0,.045);border-radius:20px;box-shadow:var(--shadow);padding:22px;margin-bottom:18px}
+.card-title{font-size:19px;font-weight:700;letter-spacing:-.035em;margin-bottom:18px}
+.section-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#86868b}
+.sub-text{color:var(--sub);line-height:1.65}
+button,.btn{transition:background-color .18s ease,border-color .18s ease,transform .18s ease,opacity .18s ease}
+.btn,.btn-primary{border-radius:999px;font-weight:650;box-shadow:none}
+.btn-primary{background:#0071e3;color:#fff}
+.btn-secondary{background:#f2f2f4;color:#1d1d1f;border:1px solid #e5e5e7}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(0,113,227,.35);outline-offset:2px}
+input,select,textarea{border-radius:12px}
+.event-card,.compact-event,.discount-card,.gallery-management-list{border-radius:20px;box-shadow:0 1px 2px rgba(0,0,0,.025),0 8px 28px rgba(0,0,0,.035)}
+.gallery-admin-item{border:1px solid #e5e5e7;border-radius:14px;background:#fff}
+.gallery-management-heading h2{font-size:clamp(28px,4vw,38px);font-weight:700;letter-spacing:-.055em}
+.gallery-count{background:#f0f0f2;color:#6e6e73;font-weight:650}
+@media(max-width:600px){#app{padding:18px 14px}.card{padding:18px;border-radius:17px}.topbar{padding:13px 15px}}

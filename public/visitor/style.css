@@ -525,3 +525,46 @@ html,body,body *,body *::before,body *::after,
 button,input,select,textarea,optgroup,option{
   font-family:var(--tonight-font-stack)!important;
 }
+
+/* v40: editorial, restrained visual system inspired by Apple's product pages */
+:root{--bg:#f5f5f7;--card:#fff;--border:#e5e5e7;--text:#1d1d1f;--sub:#6e6e73;--primary:#1d1d1f;--blue:#0071e3;--green:#248a52;--radius:20px;--shadow:0 1px 2px rgba(0,0,0,.025),0 8px 28px rgba(0,0,0,.035)}
+html,body{background:var(--bg);color:var(--text);letter-spacing:-.012em}
+.topbar{height:66px;background:rgba(255,255,255,.88);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,.06);box-shadow:none}
+.brand{font-weight:700;letter-spacing:-.05em}
+#app{max-width:900px;padding:28px 22px 34px}
+.page-title{font-size:clamp(30px,5vw,42px);line-height:1.1;letter-spacing:-.06em;font-weight:750;margin:8px 0 10px}
+.lead{font-size:15px;line-height:1.75;color:#6e6e73;max-width:680px}
+.section-head{margin:34px 2px 14px}
+.section-head h2{font-size:21px;font-weight:700;letter-spacing:-.04em}
+.card{border:1px solid rgba(0,0,0,.045);border-radius:20px;padding:20px;box-shadow:var(--shadow);margin-bottom:16px}
+.hero-card{border:0;border-radius:24px;box-shadow:none;min-height:clamp(300px,48vw,480px)}
+.hero-copy{padding:clamp(24px,5vw,42px)}
+.hero-copy h2{font-size:clamp(30px,5vw,48px);line-height:1.08;letter-spacing:-.055em;font-weight:750;max-width:720px}
+.hero-copy p{font-size:14px;line-height:1.6}
+.pill{font-weight:650;letter-spacing:0;background:#f2f2f4;color:#515154;border-radius:999px}
+.pill.live{background:#e8f5ed;color:#248a52}
+.pill.blue{background:#eaf3ff;color:#0066cc}
+.btn{border-radius:999px;padding:14px 20px;font-weight:650;box-shadow:none;background:#1d1d1f}
+.btn.secondary{background:#f2f2f4;color:#1d1d1f}
+.btn.blue{background:#0071e3;color:#fff}
+.btn:active,.share-top:active,.event-switch-top:active{transform:scale(.98)}
+.event-meta{gap:7px}
+.detail-shortcuts{gap:12px}
+.quick,.detail-shortcuts>*{border-radius:18px}
+.timeline-visual-card{border:1px solid rgba(0,0,0,.045);border-radius:20px;box-shadow:var(--shadow);padding:20px}
+.timeline-visual-heading strong{font-size:12px;letter-spacing:.04em}
+.visitor-timeline-block{border-radius:11px;box-shadow:none}
+.visitor-timeline-block.is-live{background:#eaf3ff;border-color:#9fc5f2;box-shadow:none}
+.bottom-nav{background:rgba(255,255,255,.9);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:1px solid rgba(0,0,0,.08);box-shadow:none}
+.bottom-nav button{color:#86868b;font-weight:600}
+.bottom-nav button.active{color:#0071e3}
+.back-btn,.share-top{background:#f2f2f4;color:#1d1d1f;border-radius:50%;box-shadow:none}
+.event-switch-top{border:0;border-radius:999px;background:#f2f2f4;color:#1d1d1f;font-weight:650;padding:10px 14px}
+.header-now{background:rgba(255,255,255,.96);border:1px solid rgba(0,0,0,.08);box-shadow:0 4px 18px rgba(0,0,0,.08);animation:none}
+.header-now-current{color:#248a52}
+.header-now-next{border-color:#e5e5e7}
+.rsvp-gate{box-shadow:var(--shadow);border-color:rgba(0,0,0,.045)}
+.rsvp-count{background:#f5f5f7;border-radius:15px}
+.rsvp-person{background:#fafafa;border:1px solid #ededee;border-radius:13px}
+.photo-viewer{background:rgba(0,0,0,.94)}
+@media(max-width:600px){#app{padding:20px 14px 28px}.page-title{font-size:32px}.card{padding:17px;border-radius:17px}.hero-card{border-radius:20px;min-height:300px}.hero-copy{padding:23px}.section-head{margin-top:29px}.timeline-visual-card{padding:14px}}
