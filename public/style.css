@@ -3827,3 +3827,37 @@ html,body,body *,body *::before,body *::after,button,input,select,textarea,optgr
 /* v46: Noto Sans JP for Japanese text; preserve v45 spacing and interactions */
 :root{--tonight-font-stack:Helvetica,Arial,"Noto Sans JP",sans-serif}
 html,body,body *,body *::before,body *::after,button,input,select,textarea,optgroup,option{font-family:var(--tonight-font-stack)!important}
+
+/* v48: HIG-inspired hierarchy, restrained materials, and consistent controls */
+:root{
+  --bg:#f5f5f7;--card:#fff;--border:#e5e5e7;--text:#1d1d1f;--sub:#6e6e73;
+  --primary:#0071e3;--accent:#0071e3;--radius:18px;
+  --shadow:0 1px 2px rgba(0,0,0,.025),0 6px 20px rgba(0,0,0,.035);
+}
+html,body{background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+.topbar{
+  background:rgba(250,250,252,.78)!important;
+  -webkit-backdrop-filter:saturate(180%) blur(24px);
+  backdrop-filter:saturate(180%) blur(24px);
+  border-bottom:1px solid rgba(60,60,67,.12)!important;
+  box-shadow:0 1px 0 rgba(255,255,255,.55) inset!important;
+}
+/* Liquid Glass is reserved for the functional navigation layer, not content cards. */
+.topbar::after{content:"";position:absolute;inset:0;pointer-events:none;border-bottom:1px solid rgba(255,255,255,.45);opacity:.7}
+.card,.guide-step,.result-panel,.member-panel,.bar-panel{
+  background:rgba(255,255,255,.98);border-color:rgba(60,60,67,.075);box-shadow:var(--shadow)
+}
+.card-title{color:var(--text);letter-spacing:-.025em}
+.btn,.icon-btn,.event-home-btn,.product-tile,.qty-btn,.mini-danger{
+  min-height:44px;transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .18s ease,background-color .18s ease,border-color .18s ease;
+}
+.btn{border-radius:14px;box-shadow:none}
+.btn-primary,.btn-primary:hover,.primary-button:hover,.button-primary:hover,button.primary:hover,button.is-primary:hover,
+.cashier-confirm:hover:not(:disabled),.confirm-button:hover,.submit-button:hover{
+  background:#0071e3!important;border-color:#0071e3!important;color:#fff!important;
+}
+.btn-primary:hover,.icon-btn:hover,.event-home-btn:hover,.product-tile:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(0,0,0,.09)}
+.btn:active,.icon-btn:active,.event-home-btn:active,.counter button:active,.discount-option button:active,.product-tile:active,.qty-btn:active,.mini-danger:active{transform:scale(.98)}
+input,select,textarea{border-radius:12px}
+@media(prefers-reduced-transparency:reduce){.topbar{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(250,250,252,.97)!important}}
+@media(prefers-reduced-motion:reduce){button,.btn{transition:none!important}}

@@ -596,3 +596,47 @@ html,body,body *,body *::before,body *::after,button,input,select,textarea,optgr
 /* v46: Noto Sans JP for Japanese text; preserve v45 spacing and interactions */
 :root{--tonight-font-stack:Helvetica,Arial,"Noto Sans JP",sans-serif}
 html,body,body *,body *::before,body *::after,button,input,select,textarea,optgroup,option{font-family:var(--tonight-font-stack)!important}
+
+/* v48: Apple HIG-inspired content hierarchy and restrained Liquid Glass navigation */
+:root{
+  --bg:#f5f5f7;--card:#fff;--border:#e5e5e7;--text:#1d1d1f;--sub:#6e6e73;
+  --blue:#0071e3;--radius:18px;
+  --shadow:0 1px 2px rgba(0,0,0,.025),0 6px 20px rgba(0,0,0,.035);
+}
+html,body{background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+.topbar{
+  background:rgba(250,250,252,.76)!important;
+  -webkit-backdrop-filter:saturate(180%) blur(24px);
+  backdrop-filter:saturate(180%) blur(24px);
+  border-bottom:1px solid rgba(60,60,67,.12)!important;
+  box-shadow:0 1px 0 rgba(255,255,255,.55) inset;
+}
+.bottom-nav{
+  background:rgba(250,250,252,.70)!important;
+  -webkit-backdrop-filter:saturate(180%) blur(28px);
+  backdrop-filter:saturate(180%) blur(28px);
+  border-top:1px solid rgba(60,60,67,.14)!important;
+  box-shadow:0 -1px 0 rgba(255,255,255,.58) inset,0 -8px 28px rgba(0,0,0,.045)!important;
+  padding-top:9px!important;
+}
+.bottom-nav button{min-height:44px;color:#86868b!important;font-weight:600}
+.bottom-nav button.active{color:#0071e3!important}
+.bottom-nav button.active span{transform:none}
+.card,.timeline-visual-card,.act,.drink,.event-tile,.quick{
+  border-color:rgba(60,60,67,.075);box-shadow:var(--shadow)
+}
+.card{background:rgba(255,255,255,.98)}
+.section-head{margin-top:30px}
+.section-head h2{letter-spacing:-.025em}
+.page-title{letter-spacing:-.04em}
+.btn{min-height:44px;border-radius:14px;font-weight:650;transition:transform .18s cubic-bezier(.2,.8,.2,1),background-color .18s,border-color .18s,box-shadow .18s}
+.btn:not(.secondary):not(.blue),.btn.blue{background:#0071e3!important;color:#fff!important}
+.btn:not(.secondary):not(.blue):hover,.btn.blue:hover{background:#0071e3!important;filter:brightness(1.035)}
+.btn:active,.share-top:active,.event-switch-top:active{transform:scale(.985)}
+.back-btn,.share-top,.event-switch-top{border:1px solid rgba(60,60,67,.09);background:rgba(255,255,255,.72);color:#1d1d1f}
+.modal-box{border:1px solid rgba(60,60,67,.08);box-shadow:0 12px 40px rgba(0,0,0,.16)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .topbar,.bottom-nav{background:rgba(250,250,252,.97)!important}
+}
+@media(prefers-reduced-transparency:reduce){.topbar,.bottom-nav{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(250,250,252,.97)!important}}
+@media(prefers-reduced-motion:reduce){button,.btn{transition:none!important}}
