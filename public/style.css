@@ -3966,3 +3966,83 @@ input,select,textarea{border-radius:12px}
   #memberList .member-record .tt-edit-btn {min-width:48px;padding:6px 7px !important;font-size:12px}
   #memberList .member-record .x {flex-basis:32px;width:32px;min-width:32px;max-width:32px}
 }
+
+/* v52: 名簿行の外観・操作ボタンをタイムテーブル行と完全に共通化 */
+#memberList .member-record {
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:12px !important;
+  width:auto !important;
+  max-width:none !important;
+  min-width:0 !important;
+  box-sizing:border-box !important;
+  padding:13px 12px !important;
+  margin:8px 0 !important;
+  border:1px solid #e5e8ef !important;
+  border-radius:14px !important;
+  background:#fff !important;
+  overflow:hidden !important;
+  box-shadow:none !important;
+  transform:none !important;
+}
+#memberList .member-record-main {
+  display:flex !important;
+  flex:1 1 auto !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  gap:12px !important;
+  width:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+  overflow:hidden !important;
+}
+#memberList .member-record-info {
+  display:flex !important;
+  flex:1 1 auto !important;
+  flex-direction:column !important;
+  gap:4px !important;
+  min-width:0 !important;
+  overflow-wrap:anywhere !important;
+}
+#memberList .member-record-info strong,
+#memberList .member-record-info small {
+  display:block !important;
+  max-width:100% !important;
+  overflow-wrap:anywhere !important;
+  line-height:1.45 !important;
+}
+#memberList .member-record-info strong {font-size:15px !important}
+#memberList .member-record-info small {font-size:13px !important}
+#memberList .member-record .member-row-select {
+  display:block !important;
+  flex:0 0 18px !important;
+  width:18px !important;
+  min-width:18px !important;
+  max-width:18px !important;
+  height:18px !important;
+  min-height:18px !important;
+  margin:0 !important;
+  padding:0 !important;
+}
+#memberList .member-record .tt-record-actions {
+  display:flex !important;
+  flex:0 0 auto !important;
+  align-items:center !important;
+  gap:7px !important;
+  flex-shrink:0 !important;
+}
+/* 編集・×ボタンは .tt-edit-btn / button.x の共通スタイルをそのまま使用 */
+#memberList .member-record .tt-edit-btn,
+#memberList .member-record .x {
+  box-sizing:border-box !important;
+  flex-shrink:0 !important;
+}
+@media(max-width:420px){
+  #memberList .member-record {gap:7px !important;padding:11px 9px !important}
+  #memberList .member-record-main {gap:8px !important}
+  #memberList .member-record-info strong {font-size:14px !important}
+  #memberList .member-record-info small {font-size:11px !important}
+  #memberList .member-record .tt-record-actions {gap:5px !important}
+}
