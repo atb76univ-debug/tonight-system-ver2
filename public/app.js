@@ -3071,19 +3071,31 @@ function buildCurrentEventResultText() {
   return lines.join("\n");
 }
 
-function downloadCurrentEventText() {
+async function copyCurrentEventText() {
   const text = buildCurrentEventResultText();
   if (!text) return;
-  const blob = new Blob(["\uFEFF", text], { type: "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  const safeName = `${ctx.ev.name || "event"}_${ctx.ev.date || ""}`.replace(/[\\/:*?"<>|]/g, "_");
-  link.href = url;
-  link.download = `${safeName || "event-result"}.txt`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const field = document.createElement("textarea");
+      field.value = text;
+      field.setAttribute("readonly", "");
+      field.style.position = "fixed";
+      field.style.opacity = "0";
+      field.style.pointerEvents = "none";
+      document.body.appendChild(field);
+      field.select();
+      field.setSelectionRange(0, field.value.length);
+      const copied = document.execCommand("copy");
+      field.remove();
+      if (!copied) throw new Error("clipboard copy failed");
+    }
+    alert("イベント結果をコピーしました。テキストを貼り付けて使用できます。");
+  } catch (error) {
+    console.error("イベント結果のコピーに失敗しました", error);
+    alert("コピーできませんでした。ブラウザのクリップボード利用設定をご確認ください。");
+  }
 }
 
 function renderEventPage() {
@@ -3100,7 +3112,7 @@ function renderEventPage() {
       <div class="row"><span>受付利益</span><strong>¥${formatMoney(s.profit)}</strong></div>
       <div class="row"><span>ドリンク販売数</span><strong>${sales.totalUnits || (ctx.bar.tally || 0)}杯</strong></div>
       <div class="row"><span>ドリンク現金売上</span><strong>¥${formatMoney(sales.cashRevenue)}</strong></div>
-      <div class="event-export-actions"><button class="btn btn-secondary" id="exportEventCsv">CSV出力</button><button class="btn btn-primary" id="exportEventText">結果をテキスト出力</button></div>
+      <div class="event-export-actions"><button class="btn btn-secondary" id="exportEventCsv">CSV出力</button><button class="btn btn-secondary" id="exportEventText">結果をコピー</button></div>
     </div>
     
     <div class="event-action-grid">
@@ -3123,7 +3135,7 @@ function renderEventPage() {
   document.getElementById("goShifts").onclick = () => navigate(renderShifts);
   document.getElementById("goMembers").onclick = () => navigate(renderMembers);
   document.getElementById("exportEventCsv").onclick = downloadCurrentEventCsv;
-  document.getElementById("exportEventText").onclick = downloadCurrentEventText;
+  document.getElementById("exportEventText").onclick = copyCurrentEventText;
   document.getElementById("editEv").onclick = () => navigate(renderEventEdit);
   document.getElementById("editPricing").onclick = () => navigate(renderEventPricing);
   document.getElementById("goGallery").onclick = () => navigate(renderGalleryManagement);

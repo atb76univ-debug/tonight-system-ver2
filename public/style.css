@@ -3863,25 +3863,34 @@ input,select,textarea{border-radius:12px}
 @media(prefers-reduced-motion:reduce){button,.btn{transition:none!important}}
 
 
-/* v49: readable member roster on narrow screens and dual result exports */
-.event-export-actions{display:grid;grid-template-columns:1fr 1.25fr;gap:10px;margin-top:10px}
-.event-export-actions .btn{width:100%;min-width:0}
-#memberList{width:100%;max-width:100%;min-width:0;overflow:hidden}
-#memberList .member-record{grid-template-columns:20px minmax(0,1fr) 52px 34px;gap:8px;width:100%;max-width:100%;min-width:0;box-sizing:border-box;padding:12px 0}
-#memberList .member-record-main{min-width:0;max-width:100%;overflow:hidden}
-#memberList .member-record-main strong,#memberList .member-record-main small{min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:break-word}
-#memberList .member-record .btn{width:52px!important;min-width:0;max-width:52px;padding:7px 4px;box-sizing:border-box}
-#memberList .member-record .x{width:34px;min-width:34px;max-width:34px;box-sizing:border-box}
+/* v50: copy result action and contained responsive member roster */
+.event-export-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px;width:100%;min-width:0}
+.event-export-actions .btn{width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+#memberList{display:flex;flex-direction:column;width:100%;max-width:100%;min-width:0;overflow:hidden;box-sizing:border-box}
+#memberList .member-record{
+  display:grid!important;
+  grid-template-columns:20px minmax(0,1fr) 58px 34px;
+  align-items:center;gap:8px;
+  width:100%;max-width:100%;min-width:0;
+  box-sizing:border-box;padding:12px 8px;
+}
+#memberList .member-row-select{width:18px;max-width:18px;min-width:18px;margin:0;justify-self:center}
+#memberList .member-record-main{display:grid;gap:3px;flex:none;width:100%;min-width:0;max-width:100%;overflow:hidden}
+#memberList .member-record-main strong,#memberList .member-record-main small{display:block;min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+#memberList .member-record .btn{width:58px!important;min-width:0;max-width:58px;padding:7px 3px;box-sizing:border-box;justify-self:stretch;white-space:nowrap}
+#memberList .member-record .x{width:34px;min-width:34px;max-width:34px;padding:0;box-sizing:border-box;justify-self:stretch}
 @media(max-width:600px){
-  .event-export-actions{grid-template-columns:1fr;gap:8px}
-  #memberList .member-record{grid-template-columns:18px minmax(0,1fr) 46px 32px;gap:6px;padding:11px 0}
-  #memberList .member-record .btn{width:46px!important;max-width:46px;min-height:38px;padding:6px 2px;font-size:12px}
-  #memberList .member-record .x{width:32px;min-width:32px;max-width:32px;height:34px}
+  .event-export-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .event-export-actions .btn{font-size:14px;padding:10px 6px}
+  #memberList .member-record{grid-template-columns:18px minmax(0,1fr) 48px 30px;gap:6px;padding:11px 5px}
+  #memberList .member-record .btn{width:48px!important;max-width:48px;min-height:38px;padding:6px 2px;font-size:12px}
+  #memberList .member-record .x{width:30px;min-width:30px;max-width:30px;height:34px}
   #memberList .member-record-main strong{font-size:14px;line-height:1.35}
   #memberList .member-record-main small{font-size:11px;line-height:1.45}
 }
 @media(max-width:360px){
-  #memberList .member-record{grid-template-columns:17px minmax(0,1fr) 42px 30px;gap:5px}
+  #memberList .member-record{grid-template-columns:16px minmax(0,1fr) 42px 28px;gap:5px;padding-left:3px;padding-right:3px}
+  #memberList .member-row-select{width:16px;max-width:16px;min-width:16px}
   #memberList .member-record .btn{width:42px!important;max-width:42px;font-size:11px}
-  #memberList .member-record .x{width:30px;min-width:30px;max-width:30px}
+  #memberList .member-record .x{width:28px;min-width:28px;max-width:28px}
 }
