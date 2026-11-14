@@ -3011,6 +3011,81 @@ function downloadCurrentEventCsv() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function buildCurrentEventResultText() {
+  if (!ctx?.ev) return "";
+  const ev = ctx.ev;
+  const eventState = state || ev.state || createInitialState();
+  const bar = ensureBar(ctx.bar || ev.bar || createBar());
+  const pricing = getPricing();
+  const general = Number(eventState.totals?.general || 0);
+  const tmp = Number(eventState.totals?.tmp || 0);
+  const people = general + tmp;
+  const history = Array.isArray(eventState.receptionHistory) ? eventState.receptionHistory : [];
+  const gross = history.reduce((sum, r) => sum + Number(r.grossEntrance ?? ((Number(r.general || 0) + Number(r.tmp || 0)) * (pricing.entryFee + pricing.drinkFee))), 0);
+  const discounts = history.reduce((sum, r) => sum + Number(r.totalDiscount || 0), 0);
+  const actualReceptionRevenue = Math.max(0, gross - discounts);
+  const firstDrinkRevenue = people * pricing.drinkFee;
+  // Entry-fee variance after separating first-drink revenue; discounts/adjustments appear here.
+  const variance = actualReceptionRevenue - firstDrinkRevenue - people * pricing.entryFee;
+  const profit = people ? general * pricing.entryFee + tmp * pricing.entryFee + variance - pricing.boxFee : 0;
+  const activeSales = (bar.sales || []).filter(sale => Number(sale.timestamp || 0) > Number(bar.resetAt || 0));
+  const cashByPrice = new Map();
+  activeSales.filter(sale => sale.paymentMethod !== "ticket").forEach(sale => {
+    (sale.items || []).forEach(item => {
+      const qty = Math.max(0, Number(item.qty || 0));
+      const price = Number(item.price || 0);
+      if (!qty) return;
+      const current = cashByPrice.get(price) || { qty: 0, revenue: 0 };
+      current.qty += qty;
+      current.revenue += price * qty;
+      cashByPrice.set(price, current);
+    });
+  });
+  const dateMatch = String(ev.date || "").match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  const dateLabel = dateMatch ? `${Number(dateMatch[2])}/${Number(dateMatch[3])}` : (ev.date || "開催日未設定");
+  const yen = value => `¥${formatMoney(Math.abs(Number(value || 0)))}`;
+  const signedYen = value => `${Number(value) < 0 ? "-" : "+"}${yen(value)}`;
+  const lines = [
+    dateLabel,
+    `来場者　${people}人`,
+    `（一般${general}人 TMP${tmp}人）`,
+    "",
+    "【TMPの収益】",
+    `一般　${yen(pricing.entryFee)} × ${general} = ${signedYen(general * pricing.entryFee)}`,
+    `TMP　${yen(pricing.entryFee)} × ${tmp} = ${signedYen(tmp * pricing.entryFee)}`,
+    `誤差　${variance < 0 ? "-" : ""}${yen(variance)}`,
+    `箱代　-${yen(pricing.boxFee)}`,
+    `利益　${signedYen(profit)}`,
+    "",
+    "【aNTENAへ渡したお金】",
+    `箱代　${yen(pricing.boxFee)}`,
+    `ファーストドリンク　${yen(pricing.drinkFee)} × ${people}人 = ${yen(firstDrinkRevenue)}`
+  ];
+  if (cashByPrice.size) {
+    [...cashByPrice.entries()].sort((a,b) => a[0] - b[0]).forEach(([price, item]) => {
+      lines.push(`キャッシュドリンク　${yen(price)} × ${item.qty}杯 = ${yen(item.revenue)}`);
+    });
+  } else {
+    lines.push("キャッシュドリンク　販売なし");
+  }
+  return lines.join("\n");
+}
+
+function downloadCurrentEventText() {
+  const text = buildCurrentEventResultText();
+  if (!text) return;
+  const blob = new Blob(["\uFEFF", text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const safeName = `${ctx.ev.name || "event"}_${ctx.ev.date || ""}`.replace(/[\\/:*?"<>|]/g, "_");
+  link.href = url;
+  link.download = `${safeName || "event-result"}.txt`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function renderEventPage() {
   const ev = ctx.ev, arc = ctx.mode === "archive";
   const s = evStats(state, ctx.bar, getPricing()), url = flyerUrl(ev);
@@ -3025,7 +3100,7 @@ function renderEventPage() {
       <div class="row"><span>受付利益</span><strong>¥${formatMoney(s.profit)}</strong></div>
       <div class="row"><span>ドリンク販売数</span><strong>${sales.totalUnits || (ctx.bar.tally || 0)}杯</strong></div>
       <div class="row"><span>ドリンク現金売上</span><strong>¥${formatMoney(sales.cashRevenue)}</strong></div>
-      <button class="btn btn-secondary full" id="exportEventCsv">この回のデータをCSV出力</button>
+      <div class="event-export-actions"><button class="btn btn-secondary" id="exportEventCsv">CSV出力</button><button class="btn btn-primary" id="exportEventText">結果をテキスト出力</button></div>
     </div>
     
     <div class="event-action-grid">
@@ -3048,6 +3123,7 @@ function renderEventPage() {
   document.getElementById("goShifts").onclick = () => navigate(renderShifts);
   document.getElementById("goMembers").onclick = () => navigate(renderMembers);
   document.getElementById("exportEventCsv").onclick = downloadCurrentEventCsv;
+  document.getElementById("exportEventText").onclick = downloadCurrentEventText;
   document.getElementById("editEv").onclick = () => navigate(renderEventEdit);
   document.getElementById("editPricing").onclick = () => navigate(renderEventPricing);
   document.getElementById("goGallery").onclick = () => navigate(renderGalleryManagement);
