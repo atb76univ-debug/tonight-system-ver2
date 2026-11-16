@@ -1,0 +1,16 @@
+tonight! v54 — 初回デプロイ前の必須設定
+
+1. このプロジェクトのディレクトリで以下を実行
+   npx wrangler secret put ADMIN_PASSWORD
+   npx wrangler secret put SESSION_SECRET
+
+2. ADMIN_PASSWORD
+   管理者だけが知る長くて固有のパスワードを設定してください（20文字以上推奨）。
+
+3. SESSION_SECRET
+   ローカル端末で openssl rand -base64 48 を実行し、その値を設定してください。
+   この値はHTML・JS・wrangler.jsoncに書かないでください。
+
+4. npm install && npm run deploy
+
+設定前は管理画面にログインできません。これは未設定状態で管理APIを公開しないための安全側の動作です。

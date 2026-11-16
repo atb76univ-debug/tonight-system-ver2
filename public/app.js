@@ -4549,4 +4549,63 @@ function initApp() {
   setInterval(() => { if (!document.hidden) syncPull(); }, 10000);
   setInterval(updateNow, 20000);   // 「いまの出番」を自動更新
 }
-initApp();
+
+function renderAdminLogin(message = "") {
+  screen.innerHTML = `<section class="admin-login-wrap"><form class="admin-login-card" id="adminLoginForm">
+    <div class="admin-login-mark">tonight!</div><h2>管理者ログイン</h2>
+    <p>管理画面を利用するにはパスワードを入力してください。</p>
+    <label for="adminPassword">管理者パスワード</label>
+    <input id="adminPassword" name="password" type="password" autocomplete="current-password" required maxlength="256" placeholder="パスワード">
+    <div class="admin-login-error" id="adminLoginError" role="alert">${message}</div>
+    <button class="admin-login-submit" type="submit">ログイン</button>
+  </form></section>`;
+  const form = document.getElementById("adminLoginForm");
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    const button = form.querySelector("button[type=submit]");
+    const error = document.getElementById("adminLoginError");
+    button.disabled = true; button.textContent = "確認中…"; error.textContent = "";
+    try {
+      const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: document.getElementById("adminPassword").value }) });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || "ログインできませんでした。");
+      location.reload();
+    } catch (errorValue) {
+      error.textContent = errorValue.message || "通信に失敗しました。";
+      button.disabled = false; button.textContent = "ログイン";
+      document.getElementById("adminPassword").focus();
+    }
+  });
+}
+
+async function startSecureAdminApp() {
+  const logoutButton = document.getElementById("adminLogoutBtn");
+  try {
+    const response = await fetch("/api/auth/session", { cache: "no-store", credentials: "same-origin" });
+    if (response.ok) {
+      logoutButton.hidden = false;
+      logoutButton.addEventListener("click", async () => {
+        logoutButton.disabled = true;
+        try { await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" }); } finally { location.reload(); }
+      });
+      initApp();
+      const sessionWatch = setInterval(async () => {
+        try {
+          const check = await fetch("/api/auth/session", { cache: "no-store", credentials: "same-origin" });
+          if (check.status === 401) { clearInterval(sessionWatch); renderAdminLogin("ログインの有効期限が切れました。もう一度ログインしてください。"); }
+        } catch {}
+      }, 5 * 60 * 1000);
+      return;
+    }
+    const payload = await response.json().catch(() => ({}));
+    if (response.status === 503 || payload.configured === false) {
+      renderAdminLogin("管理者認証がまだ設定されていません。SECURITY-SETUP.txt の手順で Worker Secrets を設定してください。");
+      return;
+    }
+    renderAdminLogin();
+  } catch {
+    renderAdminLogin("認証サーバーに接続できません。通信環境を確認してください。");
+  }
+}
+startSecureAdminApp();

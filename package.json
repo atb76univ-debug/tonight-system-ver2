@@ -1,7 +1,7 @@
 {
   "name": "tonight-system",
   "private": true,
-  "version": "1.0.0",
+  "version": "54.0.0",
   "description": "tonight! event operations app and Cloudflare Worker",
   "scripts": {
     "deploy": "wrangler deploy"
