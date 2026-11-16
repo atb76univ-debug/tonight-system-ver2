@@ -4552,7 +4552,7 @@ function initApp() {
 
 function renderAdminLogin(message = "") {
   screen.innerHTML = `<section class="admin-login-wrap"><form class="admin-login-card" id="adminLoginForm">
-    <div class="admin-login-mark">tonight!</div><h2>管理者ログイン</h2>
+    <h2>管理者ログイン</h2>
     <p>管理画面を利用するにはパスワードを入力してください。</p>
     <label for="adminPassword">管理者パスワード</label>
     <input id="adminPassword" name="password" type="password" autocomplete="current-password" required maxlength="256" placeholder="パスワード">
