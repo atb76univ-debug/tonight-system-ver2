@@ -76,3 +76,11 @@ NODE
 Set these using `npx wrangler secret put VAPID_PUBLIC_KEY`, `npx wrangler secret put VAPID_PRIVATE_JWK`, and `npx wrangler secret put VAPID_SUBJECT` (subject should be a mailto: address or HTTPS URL). Push support depends on browser/platform support and user permission. In-app announcements work without VAPID.
 - Admin app can open the visitor app. Visitor app has no admin navigation.
 - Event editor supports venue name and a Google Maps URL. The URL is shown as an external map link; a Google Maps embed API key is not required.
+
+
+## v57 更新内容
+- お知らせの発信者表示を「TMP」に統一し、TMPロゴのアバターを追加。
+- リアクションは選択状態を表示し、同じスタンプを再度押すと取り消し可能。
+- 管理者のお知らせ投稿に太字・斜体・下線・取り消し線・箇条書き・番号付きリスト・HTTPSリンクの書式ツールを追加。
+- 管理者は投稿済みのお知らせを編集可能。
+- リッチテキストHTMLはWorker側で許可タグ・リンクを制限して保存・配信。

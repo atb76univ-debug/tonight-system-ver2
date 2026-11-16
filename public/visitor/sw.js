@@ -1,5 +1,5 @@
 // ネットワーク優先。通信できない時だけ保存済みの画面を表示する（/api は対象外）
-const C = 'tonight-v55';
+const C = 'tonight-v57';
 
 self.addEventListener('install', event => {
   event.waitUntil(self.skipWaiting());
@@ -37,7 +37,7 @@ self.addEventListener('push', event => {
   event.waitUntil((async () => {
     let message = {};
     try { const response = await fetch('/api/public/messages/latest', { cache:'no-store' }); if (response.ok) message = await response.json(); } catch {}
-    const title = 'tonight!｜運営からのお知らせ';
+    const title = 'tonight!｜TMPからのお知らせ';
     const body = String(message.text || '新しいお知らせがあります。').slice(0,120);
     await self.registration.showNotification(title, { body, icon:'../icon-192.png', badge:'../icon-192.png', data:{ url:'./' }, tag:message.id || 'tonight-announcement' });
   })());

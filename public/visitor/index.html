@@ -13,14 +13,14 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="../icon-192.png">
   <link rel="icon" type="image/png" href="../TMPlogo.png">
-  <link rel="stylesheet" href="style.css?v=visitor-name-messages-v55">
+  <link rel="stylesheet" href="style.css?v=tmp-rich-messages-v57">
 </head>
 <body>
   <header class="topbar">
     <button id="backBtn" class="back-btn" type="button" aria-label="戻る" hidden>‹</button>
     <a class="brand" href="#home" aria-label="tonight! ホーム"><img src="../TMPlogo.png" alt="TSUKUBA MUSIC PROJECT"><span>tonight!</span></a>
     <div id="headerNow" class="header-now" hidden aria-live="polite"></div>
-    <div class="top-actions"><button class="event-switch-top" id="eventSwitchTop" type="button">イベント選択</button><button class="share-top" id="shareBtn" type="button" aria-label="共有">↗</button></div>
+    <div class="top-actions"><button class="notification-top" id="notificationBtn" type="button" aria-label="通知" title="通知"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span id="notificationBadge" hidden></span></button><button class="event-switch-top" id="eventSwitchTop" type="button">イベント選択</button><button class="share-top" id="shareBtn" type="button" aria-label="共有">↗</button></div>
   </header>
   <main id="app" aria-live="polite"><div class="loading"><img src="../TMPlogo.png" alt=""><p>イベント情報を読み込んでいます…</p></div></main>
   <nav class="bottom-nav" aria-label="メインメニュー">
@@ -31,7 +31,7 @@
     <button data-page="photos"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7.5h4l1.5-2h7l1.5 2h4v12H3z"/><circle cx="12" cy="13.5" r="4"/></svg></span><small>フォト</small></button>
   </nav>
   <div id="modalRoot"></div>
-  <script src="app.js?v=visitor-name-messages-v55"></script>
+  <script src="app.js?v=tmp-rich-messages-v57"></script>
   <script>if('serviceWorker' in navigator) addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script>
 </body>
 </html>
