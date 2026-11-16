@@ -2518,6 +2518,16 @@ function todayStr() {
 function defaultBarProducts() {
   return [{ id: uid(), name: "ドリンク", price: 500 }];
 }
+// 共有ドリンクラインナップの更新番号は、端末間の同一ミリ秒更新や時計差で
+// 古いデータに負けないよう、必ず既知の最大値より大きくする。
+function touchDrinkLineup() {
+  db.drinkLineupUpdated = Math.max(Date.now(), Number(db.drinkLineupUpdated || 0) + 1);
+  db.updated = Math.max(Date.now(), Number(db.updated || 0) + 1);
+}
+function normalizeMemberFilter(value) {
+  return String(value || "").normalize("NFKC").toLocaleLowerCase("ja")
+    .replace(/[\s　・]/g, "");
+}
 function createBar() {
   return { started: false, startBreakdown: {}, endBreakdown: {}, tally: 0, tickets: 0, ticketCollected: "", receptionTicketRemaining: "", ticketChecks: {}, remain: "", checks: {}, products: defaultBarProducts(), sales: [], resetAt: 0, voidedSales: [], deletedSales: [] };
 }
@@ -3360,7 +3370,7 @@ function renderMemberProfileEdit() {
 
 function renderMembers() {
   const gradeNumber = value => {
-    const match = String(value || "").match(/\\d+/);
+    const match = String(value || "").match(/\d+/);
     return match ? Number(match[0]) : Number.POSITIVE_INFINITY;
   };
   const compareGrade = (a,b) => {
@@ -3381,8 +3391,8 @@ function renderMembers() {
     });
   const planned=Array.isArray(ctx.ev.participants)?ctx.ev.participants:[];
   const receptionNames=new Set((state.receptionHistory||[]).flatMap(r=>(r.guests||[]).filter(g=>g.type==="tmp").flatMap(g=>[g.memberId||"",`name:${g.name||""}`])));
-  screen.innerHTML=`<div class="card"><div class="card-title">参加予定メンバー</div><p class="sub-text">参加予定に登録したメンバーの受付状況を確認できます。チェックボックス・名前・受付状況は横並びで表示されます。</p><div class="member-filter-toolbar"><input type="search" id="participantNameSearch" placeholder="名前の一部で検索" aria-label="参加予定メンバーを名前で検索"><select id="participantGradeFilter" aria-label="参加予定メンバーを学年で絞り込み"><option value="">すべての学年</option>${gradeOptions.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join("")}</select></div><div class="member-check-grid">${members.map(m=>{const grade=String(m.grade||"").trim()||"学年未登録";const searchText=[m.name,m.nickname,memberDisplayName(m)].filter(Boolean).join(" ").toLocaleLowerCase("ja");return `<label class="member-check" data-participant-grade="${esc(grade)}" data-participant-search="${esc(searchText)}"><input type="checkbox" data-participant="${esc(m.id)}" ${planned.includes(m.id)?"checked":""}><span>${esc(memberDisplayName(m))}${m.nickname?` <small>(${esc(m.name)})</small>`:""} <small>${esc(grade)}</small></span><b class="${(receptionNames.has(m.id)||receptionNames.has(`name:${m.name}`))?"checked":"pending"}">${(receptionNames.has(m.id)||receptionNames.has(`name:${m.name}`))?"受付済み":"未受付"}</b></label>`}).join("")||`<div class="sub-text">先に名簿へメンバーを登録してください。</div>`}</div><button class="btn btn-primary full" id="saveParticipants">参加予定を保存</button></div>
-  <div class="card"><div class="card-title">メンバー名簿</div><p class="sub-text">出演者プロフィールは各メンバーの「編集」から登録できます。写真URL・Instagram・好きなジャンル／アーティスト・Spotifyプレイリスト・自己紹介が来場者用アプリに表示されます。</p><div class="member-import"><label>CSV／Excelを読み込む<input type="file" id="memberFile" accept=".csv,.xlsx,.xls"></label><small>表に他の項目が含まれていても、「名前（氏名）」「学年」「ニックネーム（DJネーム）」の列を取り込みます。</small></div><div class="inline-form"><input id="memberName" placeholder="本名・氏名"><input id="memberGrade" placeholder="学年（例：3年）"><input id="memberNickname" placeholder="ニックネーム／DJネーム（任意）"><button class="btn btn-primary full" id="addMember">メンバーを追加</button></div><div class="member-bulk-toolbar"><label><input type="checkbox" id="selectAllMembers"> 全員選択</label><button type="button" class="btn btn-danger" id="deleteSelectedMembers" disabled>選択したメンバーを一括削除</button><small id="selectedMemberCount">0名選択中</small></div><div class="member-filter-toolbar"><input type="search" id="memberNameSearch" placeholder="名前の一部で検索" aria-label="名前の一部で検索"><select id="memberGradeFilter" aria-label="学年で絞り込み"><option value="">すべての学年</option>${gradeOptions.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join("")}</select></div><div id="memberList">${members.map(m=>{const st=memberStats(m.id);const grade=String(m.grade||"").trim()||"学年未登録";const searchText=[m.name,m.nickname,memberDisplayName(m)].filter(Boolean).join(" ").toLocaleLowerCase("ja");return `<div class="member-record tt-record" data-member-grade="${esc(grade)}" data-member-search="${esc(searchText)}"><div class="member-record-main"><input class="member-row-select" type="checkbox" data-select-member="${esc(m.id)}" aria-label="${esc(memberDisplayName(m))}を選択"><div class="member-record-info"><strong>${esc(memberDisplayName(m))}</strong>${m.nickname?`<small>本名：${esc(m.name)}</small>`:""}<small>${esc(grade)} ・ 参加 ${st.attendance}回 ・ DJ ${st.dj}回 ・ 最終出演 ${esc(st.lastDate)}</small></div></div><div class="tt-record-actions"><button type="button" class="btn btn-secondary tt-edit-btn" data-edit-member="${esc(m.id)}">編集</button><button type="button" class="x" data-delete-member="${esc(m.id)}" aria-label="削除">×</button></div></div>`}).join("")||`<p class="sub-text">名簿はまだ空です。</p>`}</div></div>`;
+  screen.innerHTML=`<div class="card"><div class="card-title">参加予定メンバー</div><p class="sub-text">参加予定に登録したメンバーの受付状況を確認できます。チェックボックス・名前・受付状況は横並びで表示されます。</p><div class="member-filter-toolbar"><input type="search" id="participantNameSearch" placeholder="名前の一部で検索" aria-label="参加予定メンバーを名前で検索"><select id="participantGradeFilter" aria-label="参加予定メンバーを学年で絞り込み"><option value="">すべての学年</option>${gradeOptions.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join("")}</select></div><div class="member-check-grid">${members.map(m=>{const grade=String(m.grade||"").trim()||"学年未登録";const searchText=normalizeMemberFilter([m.name,m.nickname,memberDisplayName(m)].filter(Boolean).join(" "));return `<label class="member-check" data-participant-grade="${esc(grade)}" data-participant-search="${esc(searchText)}"><input type="checkbox" data-participant="${esc(m.id)}" ${planned.includes(m.id)?"checked":""}><span>${esc(memberDisplayName(m))}${m.nickname?` <small>(${esc(m.name)})</small>`:""} <small>${esc(grade)}</small></span><b class="${(receptionNames.has(m.id)||receptionNames.has(`name:${m.name}`))?"checked":"pending"}">${(receptionNames.has(m.id)||receptionNames.has(`name:${m.name}`))?"受付済み":"未受付"}</b></label>`}).join("")||`<div class="sub-text">先に名簿へメンバーを登録してください。</div>`}</div><button class="btn btn-primary full" id="saveParticipants">参加予定を保存</button></div>
+  <div class="card"><div class="card-title">メンバー名簿</div><p class="sub-text">出演者プロフィールは各メンバーの「編集」から登録できます。写真URL・Instagram・好きなジャンル／アーティスト・Spotifyプレイリスト・自己紹介が来場者用アプリに表示されます。</p><div class="member-import"><label>CSV／Excelを読み込む<input type="file" id="memberFile" accept=".csv,.xlsx,.xls"></label><small>表に他の項目が含まれていても、「名前（氏名）」「学年」「ニックネーム（DJネーム）」の列を取り込みます。</small></div><div class="inline-form"><input id="memberName" placeholder="本名・氏名"><input id="memberGrade" placeholder="学年（例：3年）"><input id="memberNickname" placeholder="ニックネーム／DJネーム（任意）"><button class="btn btn-primary full" id="addMember">メンバーを追加</button></div><div class="member-bulk-toolbar"><label><input type="checkbox" id="selectAllMembers"> 全員選択</label><button type="button" class="btn btn-danger" id="deleteSelectedMembers" disabled>選択したメンバーを一括削除</button><small id="selectedMemberCount">0名選択中</small></div><div class="member-filter-toolbar"><input type="search" id="memberNameSearch" placeholder="名前の一部で検索" aria-label="名前の一部で検索"><select id="memberGradeFilter" aria-label="学年で絞り込み"><option value="">すべての学年</option>${gradeOptions.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join("")}</select></div><div id="memberList">${members.map(m=>{const st=memberStats(m.id);const grade=String(m.grade||"").trim()||"学年未登録";const searchText=normalizeMemberFilter([m.name,m.nickname,memberDisplayName(m)].filter(Boolean).join(" "));return `<div class="member-record tt-record" data-member-grade="${esc(grade)}" data-member-search="${esc(searchText)}"><div class="member-record-main"><input class="member-row-select" type="checkbox" data-select-member="${esc(m.id)}" aria-label="${esc(memberDisplayName(m))}を選択"><div class="member-record-info"><strong>${esc(memberDisplayName(m))}</strong>${m.nickname?`<small>本名：${esc(m.name)}</small>`:""}<small>${esc(grade)} ・ 参加 ${st.attendance}回 ・ DJ ${st.dj}回 ・ 最終出演 ${esc(st.lastDate)}</small></div></div><div class="tt-record-actions"><button type="button" class="btn btn-secondary tt-edit-btn" data-edit-member="${esc(m.id)}">編集</button><button type="button" class="x" data-delete-member="${esc(m.id)}" aria-label="削除">×</button></div></div>`}).join("")||`<p class="sub-text">名簿はまだ空です。</p>`}</div></div>`;
   const applyParticipantFilters=()=>{
     const query=(document.getElementById("participantNameSearch").value||"").trim().toLocaleLowerCase("ja");
     const grade=document.getElementById("participantGradeFilter").value;
@@ -3396,12 +3406,15 @@ function renderMembers() {
   document.getElementById("participantGradeFilter").addEventListener("change",applyParticipantFilters);
   document.getElementById("saveParticipants").onclick=()=>{ctx.ev.participants=[...screen.querySelectorAll('[data-participant]:checked')].map(x=>x.dataset.participant);ctx.ev.u.meta=Date.now();persistDb();alert("参加予定を保存しました");renderMembers();};
   const applyMemberFilters=()=>{
-    const query=(document.getElementById("memberNameSearch").value||"").trim().toLocaleLowerCase("ja");
+    const query=normalizeMemberFilter(document.getElementById("memberNameSearch").value);
     const grade=document.getElementById("memberGradeFilter").value;
     screen.querySelectorAll("#memberList .member-record").forEach(row=>{
-      const matchesName=!query || (row.dataset.memberSearch||"").includes(query);
+      const matchesName=!query || normalizeMemberFilter(row.dataset.memberSearch||"").includes(query);
       const matchesGrade=!grade || row.dataset.memberGrade===grade;
-      row.hidden=!(matchesName&&matchesGrade);
+      // .member-record は display:flex!important のため hidden 属性だけでは隠れない。
+      const visible = matchesName && matchesGrade;
+      row.hidden = !visible;
+      row.style.setProperty("display", visible ? "flex" : "none", "important");
     });
   };
   document.getElementById("memberNameSearch").addEventListener("input",applyMemberFilters);
@@ -4014,7 +4027,7 @@ function renderBarHome() {
     if (!p || !name || !Number.isInteger(price) || price <= 0) { alert("商品名と1円以上の整数価格を入力してください"); return; }
     p.name = name; p.price = price;
     db.drinkLineup = (db.drinkLineup || []).map(x => x.id === id ? { id, name, price } : x);
-    db.drinkLineupUpdated = Date.now();
+    touchDrinkLineup();
     for (const event of db.events) if (event.bar) {
       const soldOut = Boolean(event.bar.products?.find(x => x.id === id)?.soldOut);
       event.bar.products = db.drinkLineup.map(x => ({ ...x, soldOut: x.id === id ? soldOut : Boolean(event.bar.products?.find(y => y.id === x.id)?.soldOut) }));
@@ -4032,7 +4045,7 @@ function renderBarHome() {
     if (!confirm("この商品を販売メニューから削除しますか？\n過去の販売履歴は残ります。")) return;
     const deletedId = btn.dataset.deleteProduct;
     db.drinkLineup = (db.drinkLineup || []).filter(x => x.id !== deletedId);
-    db.drinkLineupUpdated = Date.now();
+    touchDrinkLineup();
     for (const event of db.events) if (event.bar) event.bar.products = (event.bar.products || []).filter(x => x.id !== deletedId);
     b.products = b.products.filter(x => x.id !== deletedId);
     barCart = barCart.filter(x => x.productId !== deletedId);
@@ -4043,7 +4056,7 @@ function renderBarHome() {
     if (!name || !Number.isInteger(price) || price <= 0) { alert("商品名と1円以上の整数価格を入力してください"); return; }
     const product = { id: uid(), name, price };
     db.drinkLineup = [...(db.drinkLineup || []), product];
-    db.drinkLineupUpdated = Date.now();
+    touchDrinkLineup();
     for (const event of db.events) if (event.bar) event.bar.products = [...(event.bar.products || []), { ...product }];
     b.products = [...b.products, { ...product }];
     saveBar(); renderBarHome();

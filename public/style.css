@@ -4046,3 +4046,7 @@ input,select,textarea{border-radius:12px}
   #memberList .member-record-info small {font-size:11px !important}
   #memberList .member-record .tt-record-actions {gap:5px !important}
 }
+
+
+/* v53: 名簿絞り込み時は強制 display:flex を上書きして非表示にする */
+#memberList .member-record[hidden] { display: none !important; }
