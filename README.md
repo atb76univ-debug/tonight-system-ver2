@@ -54,3 +54,25 @@ npm run deploy
 - `public/visitor/`: visitor app and static assets
 - `src/worker.js`: Cloudflare Worker and Durable Object
 - `wrangler.jsonc`: Cloudflare deployment configuration
+
+
+## v55 additions
+- Visitor RSVP identity is now issued and verified by the Worker using an HttpOnly signed cookie. Client-supplied visitor IDs are ignored.
+- Event announcements are posted only through the authenticated admin endpoint. Visitors can read threads and add reactions.
+- Optional Web Push uses VAPID. Configure `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_JWK`, and `VAPID_SUBJECT` as Worker secrets/vars.
+- Generate VAPID keys with Node:
+
+```bash
+node - <<'NODE'
+const { generateKeyPairSync } = require('crypto');
+const { publicKey, privateKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+const pub = publicKey.export({format:'jwk'});
+const priv = privateKey.export({format:'jwk'});
+const b64 = s => Buffer.from(s).toString('base64url');
+console.log('VAPID_PUBLIC_KEY=' + b64(Buffer.concat([Buffer.from([4]),Buffer.from(pub.x,'base64url'),Buffer.from(pub.y,'base64url')])));
+console.log('VAPID_PRIVATE_JWK=' + JSON.stringify({kty:'EC',crv:'P-256',x:priv.x,y:priv.y,d:priv.d}));
+NODE
+```
+Set these using `npx wrangler secret put VAPID_PUBLIC_KEY`, `npx wrangler secret put VAPID_PRIVATE_JWK`, and `npx wrangler secret put VAPID_SUBJECT` (subject should be a mailto: address or HTTPS URL). Push support depends on browser/platform support and user permission. In-app announcements work without VAPID.
+- Admin app can open the visitor app. Visitor app has no admin navigation.
+- Event editor supports venue name and a Google Maps URL. The URL is shown as an external map link; a Google Maps embed API key is not required.

@@ -83,7 +83,7 @@ function mergeInto(target, source) {
     if (!existing) { target.events.push(structuredClone(incoming)); continue; }
     existing.u = existing.u || {}; const versions = incoming.u || {};
     if (Number(versions.meta || 0) > Number(existing.u.meta || 0)) {
-      for (const key of ['name', 'date', 'flyer', 'archived', 'deleted', 'participants', 'pricing'])
+      for (const key of ['name', 'date', 'flyer', 'archived', 'deleted', 'participants', 'pricing', 'venue', 'mapUrl', 'description'])
         if (Object.prototype.hasOwnProperty.call(incoming, key)) existing[key] = structuredClone(incoming[key]);
       existing.u.meta = Number(versions.meta || 0);
     }
@@ -161,6 +161,56 @@ async function rateLimit(env, key, limit, windowMs, reset = false) {
   return response.json();
 }
 async function requireAdmin(request, env) { return await validSession(request, env); }
+const VISITOR_COOKIE = 'tonight_visitor_session';
+async function visitorCookie(request, env) {
+  const raw = request.headers.get('Cookie') || '';
+  const part = raw.split(';').map(x => x.trim()).find(x => x.startsWith(VISITOR_COOKIE + '='));
+  if (!part || !configured(env)) return null;
+  try {
+    const token = decodeURIComponent(part.slice(VISITOR_COOKIE.length + 1));
+    const dot = token.indexOf('.'); if (dot < 1) return null;
+    const payload = token.slice(0, dot), signature = token.slice(dot + 1);
+    const [id, expiresText] = payload.split('.'); const expires = Number(expiresText);
+    if (!/^[A-Za-z0-9_-]{20,80}$/.test(id || '') || !Number.isSafeInteger(expires) || expires <= Math.floor(Date.now()/1000)) return null;
+    return constantTimeEqual(signature, b64url(await hmac(payload, env.SESSION_SECRET))) ? id : null;
+  } catch { return null; }
+}
+async function ensureVisitorCookie(request, env) {
+  const existing = await visitorCookie(request, env); if (existing) return { id: existing, cookie: null };
+  const id = b64url(crypto.getRandomValues(new Uint8Array(24)));
+  const expires = Math.floor(Date.now()/1000) + 365*24*60*60;
+  const payload = `${id}.${expires}`;
+  const token = `${payload}.${b64url(await hmac(payload, env.SESSION_SECRET))}`;
+  return { id, cookie: `${VISITOR_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${365*24*60*60}` };
+}
+async function vapidAuthorization(endpoint, env) {
+  if (!env.VAPID_PRIVATE_JWK || !env.VAPID_PUBLIC_KEY || !env.VAPID_SUBJECT) return null;
+  const audience = new URL(endpoint).origin, now = Math.floor(Date.now()/1000);
+  const header = b64url(new TextEncoder().encode(JSON.stringify({ alg:'ES256', typ:'JWT' })));
+  const payload = b64url(new TextEncoder().encode(JSON.stringify({ aud:audience, exp:now+12*60*60, sub:env.VAPID_SUBJECT })));
+  const unsigned = `${header}.${payload}`;
+  const jwk = JSON.parse(env.VAPID_PRIVATE_JWK);
+  const key = await crypto.subtle.importKey('jwk', jwk, { name:'ECDSA', namedCurve:'P-256' }, false, ['sign']);
+  const signature = new Uint8Array(await crypto.subtle.sign({ name:'ECDSA', hash:'SHA-256' }, key, new TextEncoder().encode(unsigned)));
+  return `vapid t=${unsigned}.${b64url(signature)}, k=${env.VAPID_PUBLIC_KEY}`;
+}
+async function sendPushNotifications(env, title, body) {
+  const stub = env.STORE.get(env.STORE.idFromName('main'));
+  const result = await stub.fetch('https://do/push-subscriptions');
+  const subscriptions = await result.json();
+  if (!Array.isArray(subscriptions) || !subscriptions.length) return { sent:0 };
+  if (!env.VAPID_PRIVATE_JWK || !env.VAPID_PUBLIC_KEY || !env.VAPID_SUBJECT) return { sent:0, configured:false };
+  let sent=0;
+  await Promise.all(subscriptions.map(async sub => {
+    try {
+      const authorization = await vapidAuthorization(sub.endpoint, env);
+      const response = await fetch(sub.endpoint, { method:'POST', headers:{ Authorization:authorization, TTL:'120', Urgency:'normal' } });
+      if (response.ok || response.status===201) sent++;
+      else if (response.status===404 || response.status===410) await stub.fetch('https://do/push-subscription', { method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({endpoint:sub.endpoint}) });
+    } catch {}
+  }));
+  return { sent, configured:true };
+}
 
 export class Store {
   constructor(state) { this.state = state; }
@@ -197,7 +247,7 @@ export class Store {
         return { id: String(event.id), name: String(event.name || ''), date: String(event.date || ''), flyer: Number(event.flyer || 0),
           archived: Boolean(event.archived), acts, members: publicMembers, products, offsetMinutes: Number(tt.offsetMinutes || 0),
           gallery: Array.isArray(event.gallery) ? event.gallery.filter(x => typeof x === 'string' && (/^https:\/\//.test(x) || /^\/api\/gallery\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+$/.test(x))).slice(0, 60) : [],
-          venue: String(event.venue || ''), description: String(event.description || '') };
+          venue: String(event.venue || ''), mapUrl: /^https:\/\//i.test(String(event.mapUrl || '')) ? String(event.mapUrl) : '', description: String(event.description || '') };
       }).sort((a, b) => String(a.date).localeCompare(String(b.date)));
       return json({ events, updated: Number(current.updated || 0) });
     }
@@ -211,18 +261,18 @@ export class Store {
       if (req.method === 'GET') {
         const participants = Object.values(records).filter(item => ['going', 'interested'].includes(item.status))
           .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0)).map(item => ({ name: item.name, status: item.status, createdAt: item.createdAt }));
-        const visitorId = String(url.searchParams.get('visitorId') || ''), myStatus = records[visitorId]?.status || (records[visitorId] ? 'going' : null);
+        const visitorId = String(req.headers.get('X-Visitor-Id') || ''), myStatus = visitorId ? (records[visitorId]?.status || null) : null;
         return json({ participants, count: participants.length, myStatus });
       }
       if (req.method === 'DELETE') {
-        const visitorId = String(url.searchParams.get('visitorId') || ''); if (!/^[A-Za-z0-9_-]{8,80}$/.test(visitorId)) return text('bad visitor id', 400);
+        const visitorId = String(req.headers.get('X-Visitor-Id') || ''); if (!/^[A-Za-z0-9_-]{20,80}$/.test(visitorId)) return text('visitor identity required', 401);
         if (records[visitorId]) { delete records[visitorId]; await this.state.storage.put(key, records); }
         return json({ ok: true, cancelled: true });
       }
       if (req.method === 'POST') {
         let body; try { body = await req.json(); } catch { return text('bad json', 400); }
-        const visitorId = String(body?.visitorId || '').slice(0, 80), name = String(body?.name || '').trim().replace(/[<>]/g, '').slice(0, 30);
-        if (!/^[A-Za-z0-9_-]{8,80}$/.test(visitorId)) return text('bad visitor id', 400);
+        const visitorId = String(req.headers.get('X-Visitor-Id') || ''), name = String(body?.name || '').trim().replace(/[<>]/g, '').slice(0, 30);
+        if (!/^[A-Za-z0-9_-]{20,80}$/.test(visitorId)) return text('visitor identity required', 401);
         const status = String(body?.status || (body?.going === false ? '' : 'going'));
         if (!['going', 'interested', 'not-going'].includes(status)) return text('bad status', 400);
         if (!name) return text('name required', 400);
@@ -231,6 +281,43 @@ export class Store {
         return json({ ok: true, count: Object.keys(records).length });
       }
       return text('method not allowed', 405, { Allow: 'GET, POST, DELETE' });
+    }
+    if (path === '/messages') {
+      const url = new URL(req.url), eventId = String(url.searchParams.get('eventId') || '');
+      if (!/^[A-Za-z0-9_-]{1,100}$/.test(eventId)) return text('bad event',400);
+      const key = `messages:${eventId}`, messages = (await this.state.storage.get(key)) || [];
+      if (req.method === 'GET') return json(messages);
+      if (req.method === 'POST') {
+        let body; try { body=await req.json(); } catch { return text('bad json',400); }
+        const message = { id: crypto.randomUUID(), text:String(body.text||'').trim().slice(0,2000), createdAt:Date.now(), reactions:{} };
+        if (!message.text) return text('message required',400);
+        messages.push(message); await this.state.storage.put(key,messages.slice(-300)); return json({ok:true,message});
+      }
+      return text('method not allowed',405,{Allow:'GET, POST'});
+    }
+    if (path === '/message-reaction' && req.method === 'POST') {
+      let body; try { body=await req.json(); } catch { return text('bad json',400); }
+      const eventId=String(body.eventId||''), messageId=String(body.messageId||''), visitorId=String(body.visitorId||''), emoji=String(body.emoji||'');
+      if (!/^[A-Za-z0-9_-]{1,100}$/.test(eventId) || !/^[A-Za-z0-9_-]{1,80}$/.test(visitorId) || !/^.{1,8}$/u.test(emoji)) return text('bad request',400);
+      const key=`messages:${eventId}`, messages=(await this.state.storage.get(key))||[], message=messages.find(m=>m.id===messageId);
+      if (!message) return text('message not found',404);
+      message.reactions=message.reactions||{}; const voters=Array.isArray(message.reactions[emoji])?message.reactions[emoji]:[];
+      message.reactions[emoji]=voters.includes(visitorId)?voters.filter(x=>x!==visitorId):[...voters,visitorId].slice(-500);
+      await this.state.storage.put(key,messages); return json({ok:true,reactions:message.reactions});
+    }
+    if (path === '/push-subscription') {
+      let body; try { body=await req.json(); } catch { return text('bad json',400); }
+      const endpoint=String(body.endpoint||''); if (!/^https:\/\//i.test(endpoint) || endpoint.length>2048) return text('bad endpoint',400);
+      const subs=(await this.state.storage.get('push-subscriptions'))||[];
+      if (req.method==='POST') { const clean={endpoint,expirationTime:body.expirationTime||null}; const next=[...subs.filter(x=>x.endpoint!==endpoint),clean].slice(-2000); await this.state.storage.put('push-subscriptions',next); return json({ok:true}); }
+      if (req.method==='DELETE') { await this.state.storage.put('push-subscriptions',subs.filter(x=>x.endpoint!==endpoint)); return json({ok:true}); }
+      return text('method not allowed',405,{Allow:'POST, DELETE'});
+    }
+    if (path === '/push-subscriptions' && req.method==='GET') return json((await this.state.storage.get('push-subscriptions'))||[]);
+    if (path === '/latest-message' && req.method==='GET') {
+      const allKeys=await this.state.storage.list({prefix:'messages:'}); let latest=null;
+      for (const value of allKeys.values()) for (const message of (Array.isArray(value)?value:[])) if (!latest || message.createdAt>latest.createdAt) latest=message;
+      return json(latest||{});
     }
     if (path === '/db') {
       const current = (await this.state.storage.get('db')) || { events: [], members: [], membersUpdated: 0, drinkLineup: [], drinkLineupUpdated: 0 };
@@ -313,19 +400,70 @@ export default {
       return secureResponse(response, url);
     }
     if (url.pathname === '/api/public/rsvp') {
-      if (!['GET', 'POST', 'DELETE'].includes(request.method)) return secureResponse(text('method not allowed', 405, { Allow: 'GET, POST, DELETE' }), url);
+      if (!['GET','POST','DELETE'].includes(request.method)) return secureResponse(text('method not allowed',405,{Allow:'GET, POST, DELETE'}),url);
+      if (!configured(env)) return secureResponse(json({error:'visitor identity service unavailable'},503),url);
       if (request.method !== 'GET') {
-        if (!sameOrigin(request)) return secureResponse(json({ error: 'origin rejected' }, 403), url);
-        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-        const allowed = await rateLimit(env, `rsvp:${ip}`, 25, 10 * 60 * 1000);
-        if (!allowed.ok) return secureResponse(json({ error: '操作が多すぎます。しばらく待ってください。' }, 429, { 'Retry-After': String(allowed.retryAfter || 600) }), url);
+        if (!sameOrigin(request)) return secureResponse(json({error:'origin rejected'},403),url);
+        const ip=request.headers.get('CF-Connecting-IP')||'unknown', allowed=await rateLimit(env,`rsvp:${ip}`,25,10*60*1000);
+        if(!allowed.ok)return secureResponse(json({error:'操作が多すぎます。しばらく待ってください。'},429,{'Retry-After':String(allowed.retryAfter||600)}),url);
       }
-      const stub = env.STORE.get(env.STORE.idFromName('main'));
-      const innerUrl = new URL('https://do/public-rsvp'); innerUrl.search = url.search;
-      response = await stub.fetch(new Request(innerUrl, request));
-      return secureResponse(response, url);
+      const identity=await ensureVisitorCookie(request,env);
+      const stub=env.STORE.get(env.STORE.idFromName('main'));
+      const innerUrl=new URL('https://do/public-rsvp'); innerUrl.search=url.search;
+      const headers=new Headers(request.headers); headers.set('X-Visitor-Id',identity.id);
+      const forwardedBody=['GET','HEAD'].includes(request.method)?undefined:await request.arrayBuffer();
+      response=await stub.fetch(new Request(innerUrl,{method:request.method,headers,body:forwardedBody}));
+      const outHeaders=new Headers(response.headers); if(identity.cookie)outHeaders.append('Set-Cookie',identity.cookie);
+      return secureResponse(new Response(response.body,{status:response.status,headers:outHeaders}),url);
     }
-
+    if (url.pathname === '/api/public/push-key' && request.method==='GET') return secureResponse(json({publicKey:env.VAPID_PUBLIC_KEY||''}),url);
+    if (url.pathname === '/api/public/push-subscription') {
+      if(!['POST','DELETE'].includes(request.method))return secureResponse(text('method not allowed',405),url);
+      if(!sameOrigin(request))return secureResponse(json({error:'origin rejected'},403),url);
+      const pushIp=request.headers.get('CF-Connecting-IP')||'unknown'; const pushLimit=await rateLimit(env,`push-sub:${pushIp}`,10,10*60*1000); if(!pushLimit.ok)return secureResponse(json({error:'通知登録の操作が多すぎます。'},429),url);
+      if(await exceedsBodyLimit(request,12000))return secureResponse(json({error:'payload too large'},413),url);
+      let subBody; try{subBody=await request.clone().json()}catch{return secureResponse(text('bad json',400),url)}
+      if(request.method==='POST'){let host='';try{host=new URL(subBody.endpoint).hostname.toLowerCase()}catch{} if(!(host==='fcm.googleapis.com'||host.endsWith('.push.services.mozilla.com')||host==='web.push.apple.com'||host.endsWith('.notify.windows.com')))return secureResponse(json({error:'unsupported push endpoint'},400),url);}
+      const stub=env.STORE.get(env.STORE.idFromName('main'));
+      const forwardedBody=await request.arrayBuffer();
+      response=await stub.fetch(new Request('https://do/push-subscription',{method:request.method,headers:request.headers,body:forwardedBody}));
+      return secureResponse(response,url);
+    }
+    if (url.pathname === '/api/public/messages' && request.method==='GET') {
+      const eventId=String(url.searchParams.get('eventId')||'');
+      if(!/^[A-Za-z0-9_-]{1,100}$/.test(eventId))return secureResponse(text('bad event',400),url);
+      const stub=env.STORE.get(env.STORE.idFromName('main'));
+      const raw=await stub.fetch('https://do/messages?eventId='+encodeURIComponent(eventId));
+      if(!raw.ok)return secureResponse(raw,url);
+      const rows=await raw.json(); const safe=rows.map(m=>({...m,reactions:Object.fromEntries(Object.entries(m.reactions||{}).map(([emoji,ids])=>[emoji,Array.isArray(ids)?ids.length:0]))}));
+      return secureResponse(json(safe),url);
+    }
+    if (url.pathname === '/api/public/messages/latest' && request.method==='GET') {
+      const stub=env.STORE.get(env.STORE.idFromName('main')); response=await stub.fetch('https://do/latest-message'); return secureResponse(response,url);
+    }
+    if (url.pathname === '/api/public/messages/reaction' && request.method==='POST') {
+      if(!sameOrigin(request))return secureResponse(json({error:'origin rejected'},403),url);
+      const identity=await ensureVisitorCookie(request,env);
+      const ip=request.headers.get('CF-Connecting-IP')||'unknown', allowed=await rateLimit(env,`reaction:${ip}`,60,10*60*1000);
+      if(!allowed.ok)return secureResponse(json({error:'リアクションが多すぎます。'},429),url);
+      let body;try{body=await request.json()}catch{return secureResponse(text('bad json',400),url)}
+      const stub=env.STORE.get(env.STORE.idFromName('main'));
+      response=await stub.fetch('https://do/message-reaction',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,visitorId:identity.id})});
+      const reactionHeaders=new Headers(response.headers); if(identity.cookie)reactionHeaders.append('Set-Cookie',identity.cookie);
+      return secureResponse(new Response(response.body,{status:response.status,headers:reactionHeaders}),url);
+    }
+    if (url.pathname === '/api/admin/messages' && request.method==='POST') {
+      if(!(await requireAdmin(request,env)))return secureResponse(json({error:'authentication required'},401),url);
+      if(!sameOrigin(request))return secureResponse(json({error:'origin rejected'},403),url);
+      if(await exceedsBodyLimit(request,12000))return secureResponse(json({error:'payload too large'},413),url);
+      let body;try{body=await request.json()}catch{return secureResponse(text('bad json',400),url)}
+      const eventId=String(body.eventId||''); if(!/^[A-Za-z0-9_-]{1,100}$/.test(eventId))return secureResponse(text('bad event',400),url);
+      const stub=env.STORE.get(env.STORE.idFromName('main'));
+      const inner=await stub.fetch('https://do/messages?eventId='+encodeURIComponent(eventId),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:body.text})});
+      if(!inner.ok)return secureResponse(inner,url);
+      let push={sent:0,configured:false}; if(body.notify!==false)push=await sendPushNotifications(env,'tonight!｜運営からのお知らせ',String(body.text||'').slice(0,120));
+      const payload=await inner.json(); return secureResponse(json({...payload,push}),url);
+    }
     if (url.pathname === '/api/db') {
       if (!(await requireAdmin(request, env))) return secureResponse(json({ error: 'authentication required' }, 401), url);
       if (request.method === 'PUT') {

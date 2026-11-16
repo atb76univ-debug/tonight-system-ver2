@@ -640,3 +640,6 @@ html,body{background:var(--bg);color:var(--text);-webkit-font-smoothing:antialia
 }
 @media(prefers-reduced-transparency:reduce){.topbar,.bottom-nav{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(250,250,252,.97)!important}}
 @media(prefers-reduced-motion:reduce){button,.btn{transition:none!important}}
+
+/* v55: announcements and venue */
+.message-board-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.message-board-head .card-heading{margin:4px 0 0}.thread-message{padding:14px 0;border-top:1px solid var(--border)}.thread-message:first-child{border-top:0}.thread-message-meta{display:flex;justify-content:space-between;gap:10px;color:var(--sub);font-size:11px}.thread-message-meta strong{color:var(--text);font-size:13px}.thread-message p{margin:9px 0 12px;line-height:1.7;overflow-wrap:anywhere}.thread-reactions{display:flex;gap:7px;flex-wrap:wrap}.reaction-btn{border:1px solid #e1e4ea;background:#f7f8fa;border-radius:999px;padding:6px 10px;font-size:13px}.venue-card .btn{display:inline-flex;width:auto;text-decoration:none;align-items:center;margin-top:8px}

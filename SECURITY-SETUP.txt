@@ -14,3 +14,6 @@ tonight! v54 — 初回デプロイ前の必須設定
 4. npm install && npm run deploy
 
 設定前は管理画面にログインできません。これは未設定状態で管理APIを公開しないための安全側の動作です。
+
+
+Optional Web Push setup: see README.md section 'v55 additions' for VAPID key generation, then set VAPID_PUBLIC_KEY, VAPID_PRIVATE_JWK, and VAPID_SUBJECT with wrangler secret put.

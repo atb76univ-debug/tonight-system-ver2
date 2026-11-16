@@ -1,6 +1,6 @@
 {
-  "name": "tonight! 来場者",
-  "short_name": "来場者",
+  "name": "tonight!",
+  "short_name": "tonight!",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

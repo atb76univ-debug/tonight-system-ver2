@@ -5,8 +5,7 @@
   const RSVP_KEY = 'tonight_visitor_rsvp_v1';
   const NOTICE_KEY = 'tonight_visitor_notice_v1';
   let data = {events:[],updated:0}, selectedId = null, page = 'select', lastPage = 'home', profileFocusIds = null;
-  const VISITOR_ID_KEY = 'tonight_visitor_id_v1';
-  const visitorId = (() => { let id=localStorage.getItem(VISITOR_ID_KEY); if(!id){id=(crypto.randomUUID?crypto.randomUUID():`v_${Date.now()}_${Math.random().toString(36).slice(2)}`).replace(/[^A-Za-z0-9_-]/g,'');localStorage.setItem(VISITOR_ID_KEY,id);} return id; })();
+  // 参加表明の本人識別はWorkerが発行するHttpOnly署名Cookieで行う。クライアント指定IDは信頼しない。
   let refreshTimer = null;
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const money = n => `¥${Number(n||0).toLocaleString('ja-JP')}`;
@@ -51,6 +50,7 @@
     if(next && first && now<first.start)return {label:'開催前',current:null,next};
     if(next)return {label:'開催中',current:null,next};
     if(last && now>last.end)return {label:'終了',current:null,next:null};
+    if(!next && ev.date && ev.date < localDate(now))return {label:'終了',current:null,next:null};
     return {label:'開催予定',current:null,next};
   }
   function actNames(ev,act){
@@ -157,13 +157,14 @@
   function renderEventDetail(ev){
     const image=flyerUrl(ev), status=rsvpStatus(ev.id);
     const choice=(value,label,desc)=>`<button type="button" class="rsvp-choice ${status===value?'is-selected':''}" data-rsvp-choice="${value}"><strong>${label}</strong><small>${desc}</small></button>`;
-    app.innerHTML=`${image?`<img src="${image}" alt="${esc(ev.name)}" class="detail-flyer">`:''}${headerTitle(ev.name,dateLabel(ev.date))}<div class="event-meta">${statusPill(ev)}${ev.venue?`<span class="pill">${esc(ev.venue)}</span>`:''}</div>${ev.description?`<div class="card"><p class="event-description">${esc(ev.description)}</p></div>`:''}<section class="card rsvp-gate"><div class="eyebrow">YOUR PLAN</div><h2 class="card-heading">tonight!で会いましょう！</h2><p class="rsvp-intro">参加予定をシェアして、みんなでイベントを楽しもう。</p><label class="rsvp-name-label" for="rsvpName">表示名（参加・興味ありの場合に公開）</label><input id="rsvpName" maxlength="30" placeholder="ニックネームを入力" value="${esc(localStorage.getItem('tonight_visitor_display_name')||'')}"><div class="rsvp-choice-grid">${choice('going','参加','行く予定！')}${choice('interested','興味あり','気になっている')}${choice('not-going','不参加','今回は参加しない')}</div><button class="btn secondary rsvp-cancel" id="rsvpCancel" ${status?'':'hidden'}>参加表明を取り消す</button><div class="rsvp-summary"><div id="rsvpCount" class="rsvp-count-grid"><span>読み込み中…</span></div><div id="rsvpParticipants" class="rsvp-participants"></div></div><div class="rsvp-actions"><button class="btn secondary" id="eventShare">↗ 友達にシェア</button><button class="btn secondary" id="calendarAdd">＋ カレンダーに追加</button><button class="btn secondary" id="noticeBtn">出演開始通知を設定</button></div><p class="rsvp-privacy">「参加」「興味あり」の名前のみ公開されます。不参加は人数・名前ともに公開されません。</p></section><div class="detail-shortcuts"><button class="quick" data-goto="schedule"><span>▤</span>タイムテーブル</button><button class="quick" data-goto="profiles"><span>♙</span>出演者</button><button class="quick" data-goto="drinks"><span class="quick-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3h14l-5.5 7v8.5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2V10L5 3Z"/><path d="M8 13h8M12 3l-2 4"/></svg></span>ドリンク</button><button class="quick" data-goto="photos"><span class="quick-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7.5h4l1.5-2h7l1.5 2h4v12H3z"/><circle cx="12" cy="13.5" r="4"/></svg></span>フォト</button></div>`;
+    app.innerHTML=`${image?`<img src="${image}" alt="${esc(ev.name)}" class="detail-flyer">`:''}${headerTitle(ev.name,dateLabel(ev.date))}<div class="event-meta">${statusPill(ev)}${ev.venue?`<span class="pill">${esc(ev.venue)}</span>`:''}</div>${ev.description?`<div class="card"><p class="event-description">${esc(ev.description)}</p></div>`:''}${ev.venue||ev.mapUrl?`<section class="card venue-card"><div class="eyebrow">VENUE</div><h2 class="card-heading">${esc(ev.venue||'会場')}</h2>${ev.mapUrl?`<a class="btn secondary" href="${esc(ev.mapUrl)}" target="_blank" rel="noopener noreferrer">Googleマップで開く ↗</a>`:''}</section>`:''}<section class="card rsvp-gate"><div class="eyebrow">YOUR PLAN</div><h2 class="card-heading">tonight!で会いましょう！</h2><p class="rsvp-intro">参加予定をシェアして、みんなでイベントを楽しもう。</p><label class="rsvp-name-label" for="rsvpName">表示名（参加・興味ありの場合に公開）</label><input id="rsvpName" maxlength="30" placeholder="ニックネームを入力" value="${esc(localStorage.getItem('tonight_visitor_display_name')||'')}"><div class="rsvp-choice-grid">${choice('going','参加','行く予定！')}${choice('interested','興味あり','気になっている')}${choice('not-going','不参加','今回は参加しない')}</div><button class="btn secondary rsvp-cancel" id="rsvpCancel" ${status?'':'hidden'}>参加表明を取り消す</button><div class="rsvp-summary"><div id="rsvpCount" class="rsvp-count-grid"><span>読み込み中…</span></div><div id="rsvpParticipants" class="rsvp-participants"></div></div><div class="rsvp-actions"><button class="btn secondary" id="eventShare">↗ 友達にシェア</button><button class="btn secondary" id="calendarAdd">＋ カレンダーに追加</button><button class="btn secondary" id="noticeBtn">出演開始通知を設定</button></div><p class="rsvp-privacy">「参加」「興味あり」の名前のみ公開されます。不参加は人数・名前ともに公開されません。</p></section><section class="card message-board"><div class="message-board-head"><div><div class="eyebrow">ANNOUNCEMENTS</div><h2 class="card-heading">運営からのお知らせ</h2></div><button class="btn secondary small" id="enablePushBtn">通知を受け取る</button></div><div id="messageThreads"><p class="notice">お知らせを読み込んでいます…</p></div></section><div class="detail-shortcuts"><button class="quick" data-goto="schedule"><span>▤</span>タイムテーブル</button><button class="quick" data-goto="profiles"><span>♙</span>出演者</button><button class="quick" data-goto="drinks"><span class="quick-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3h14l-5.5 7v8.5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2V10L5 3Z"/><path d="M8 13h8M12 3l-2 4"/></svg></span>ドリンク</button><button class="quick" data-goto="photos"><span class="quick-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7.5h4l1.5-2h7l1.5 2h4v12H3z"/><circle cx="12" cy="13.5" r="4"/></svg></span>フォト</button></div>`;
     refreshRsvpList(ev.id);
+    refreshMessages(ev.id);
   }
   async function refreshRsvpList(eventId){
     const count=$('#rsvpCount'), list=$('#rsvpParticipants'); if(!count||!list)return;
     try{
-      const res=await fetch(`/api/public/rsvp?eventId=${encodeURIComponent(eventId)}&visitorId=${encodeURIComponent(visitorId)}`,{cache:'no-store'});
+      const res=await fetch(`/api/public/rsvp?eventId=${encodeURIComponent(eventId)}`,{cache:'no-store',credentials:'same-origin'});
       if(!res.ok)throw new Error('RSVP load failed');
       const payload=await res.json();
       if(['going','interested','not-going'].includes(payload.myStatus)){saveRsvp(eventId,payload.myStatus);document.querySelectorAll('[data-rsvp-choice]').forEach(button=>button.classList.toggle('is-selected',button.dataset.rsvpChoice===payload.myStatus));}
@@ -182,7 +183,7 @@
     const name=enteredName||(status==='not-going'?'非公開':'');
     if(!name){alert('参加・興味ありの場合は、一覧に表示する名前を入力してください。');$('#rsvpName')?.focus();return;}
     try{
-      const res=await fetch(`/api/public/rsvp?eventId=${encodeURIComponent(ev.id)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({visitorId,name,status})});
+      const res=await fetch(`/api/public/rsvp?eventId=${encodeURIComponent(ev.id)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,status})});
       if(!res.ok)throw new Error(await res.text());
       saveRsvp(ev.id,status);if(status!=='not-going')localStorage.setItem('tonight_visitor_display_name',name);render();
     }catch(error){alert('参加表明を保存できませんでした。通信環境を確認して、もう一度お試しください。');}
@@ -191,10 +192,34 @@
   async function cancelRsvp(){
     const ev=selected();if(!ev)return;
     try{
-      const res=await fetch(`/api/public/rsvp?eventId=${encodeURIComponent(ev.id)}&visitorId=${encodeURIComponent(visitorId)}`,{method:'DELETE'});
+      const res=await fetch(`/api/public/rsvp?eventId=${encodeURIComponent(ev.id)}`,{method:'DELETE',credentials:'same-origin'});
       if(!res.ok)throw new Error(await res.text());
       saveRsvp(ev.id,null);render();
     }catch{alert('参加表明を取り消せませんでした。通信環境を確認して、もう一度お試しください。');}
+  }
+  async function refreshMessages(eventId){
+    const host=$('#messageThreads'); if(!host)return;
+    try{
+      const res=await fetch(`/api/public/messages?eventId=${encodeURIComponent(eventId)}`,{cache:'no-store'}); if(!res.ok)throw new Error();
+      const messages=await res.json(); const emojis=['👍','❤️','🎉','👏','🔥'];
+      host.innerHTML=messages.length?messages.slice().reverse().map(m=>`<article class="thread-message"><div class="thread-message-meta"><strong>運営</strong><time>${new Date(m.createdAt).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</time></div><p>${esc(m.text).replace(/\n/g,'<br>')}</p><div class="thread-reactions">${emojis.map(e=>`<button type="button" class="reaction-btn" data-reaction="${e}" data-message="${esc(m.id)}">${e} ${Number(m.reactions?.[e]||0)||''}</button>`).join('')}</div></article>`).join(''):'<p class="notice">運営からのお知らせはまだありません。</p>';
+    }catch{host.innerHTML='<p class="notice">お知らせを取得できませんでした。</p>';}
+  }
+  async function enablePushNotifications(){
+    if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){alert('この環境ではプッシュ通知に対応していません。');return;}
+    const permission=await Notification.requestPermission(); if(permission!=='granted'){alert('通知が許可されませんでした。');return;}
+    try{
+      const keyRes=await fetch('/api/public/push-key',{cache:'no-store'}), keyData=await keyRes.json();
+      if(!keyData.publicKey){alert('プッシュ通知のサーバー設定がまだ完了していません。運営にお問い合わせください。');return;}
+      const registration=await navigator.serviceWorker.ready;
+      let subscription=await registration.pushManager.getSubscription();
+      if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:Uint8Array.from(atob(keyData.publicKey.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-keyData.publicKey.length%4)%4)),c=>c.charCodeAt(0))});
+      const res=await fetch('/api/public/push-subscription',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(subscription)});
+      if(!res.ok)throw new Error(); alert('運営からのお知らせ通知を受け取る設定が完了しました。');
+    }catch{alert('通知の設定に失敗しました。ホーム画面への追加・HTTPS接続・ブラウザの通知設定をご確認ください。');}
+  }
+  async function toggleReaction(messageId,emoji){
+    try{const res=await fetch('/api/public/messages/reaction',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({eventId:selected()?.id,messageId,emoji})});if(!res.ok)throw new Error();await refreshMessages(selected().id);}catch{alert('リアクションを送信できませんでした。');}
   }
   function render(){
     const back=$('#backBtn'), nav=$('.bottom-nav'), hasEvent=Boolean(selectedId);
@@ -327,7 +352,7 @@
         // timer redrew the schedule before this request completed, leaving old times visible.
         if(page==='schedule' && selected()) renderSchedule();
         updateHeaderNowNext();
-        if(page==='home' && selectedId) refreshRsvpList(selectedId);
+        if(page==='home' && selectedId) { refreshRsvpList(selectedId); refreshMessages(selectedId); }
       }
     }catch(error){
       if(!silent)app.innerHTML=`${headerTitle('情報を読み込めませんでした')}<div class="error">イベント情報の取得に失敗しました。通信環境を確認して、再読み込みしてください。<br><br><button class="btn" id="retry">再読み込み</button></div>`;
@@ -362,6 +387,8 @@
     if(e.target.closest('#calendarAdd')){addToCalendar();return;}
     const rsvpChoice=e.target.closest('[data-rsvp-choice]');if(rsvpChoice){setRsvpStatus(rsvpChoice.dataset.rsvpChoice);return;}
     if(e.target.closest('#rsvpCancel')){cancelRsvp();return;}
+    if(e.target.closest('#enablePushBtn')){enablePushNotifications();return;}
+    const reaction=e.target.closest('[data-reaction]');if(reaction){toggleReaction(reaction.dataset.message,reaction.dataset.reaction);return;}
     if(e.target.closest('#backBtn')){if(page==='detail'){setPage('home');return;}setPage('home');return;}
     if(e.target.closest('#backHome')){setPage('home');return;}
     if(e.target.closest('#eventSwitchInline')){selectedId=null;setPage('select');return;}

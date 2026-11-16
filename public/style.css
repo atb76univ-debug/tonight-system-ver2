@@ -4066,3 +4066,7 @@ input,select,textarea{border-radius:12px}
 .admin-login-submit:disabled{opacity:.6;cursor:wait}
 .admin-login-error{min-height:20px;margin-top:10px;color:#c62828;font-size:13px;line-height:1.5}
 @media(max-width:600px){.admin-login-card{padding:24px 20px}.admin-logout-btn{padding:7px 9px;font-size:11px}}
+
+/* v55: visitor-app shortcut and announcement composer */
+.visitor-app-link{display:inline-flex;align-items:center;justify-content:center;padding:8px 13px;border:1px solid #dfe3eb;border-radius:999px;background:rgba(255,255,255,.8);color:#0071e3;text-decoration:none;font-size:12px;font-weight:750;white-space:nowrap}
+.thread-message{padding:14px 0;border-top:1px solid #e7e9ee}.thread-message:first-child{border-top:0}.thread-message-meta{display:flex;justify-content:space-between;gap:10px;color:#6b7280;font-size:12px}.thread-message-meta strong{color:#111}.thread-message p{margin:9px 0 12px;line-height:1.7;overflow-wrap:anywhere}.check-row{display:flex;align-items:center;gap:8px;margin:12px 0;color:#555;font-size:13px}

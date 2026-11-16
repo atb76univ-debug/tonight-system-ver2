@@ -297,7 +297,7 @@ function renderReceptionTabs() {
 
 function getPageTitle(renderFunc) {
   const titles = new Map([
-    [renderEventList, "tonight!"], [renderGuide, "使い方"], [renderEventNew, "新しい回を作成"],
+    [renderEventList, "tonight!管理用"], [renderGuide, "使い方"], [renderEventNew, "新しい回を作成"],
     [renderMemberProfileEdit, "出演者プロフィール編集"],
     [renderEventPage, "イベントホーム"], [renderEventEdit, "イベント情報"], [renderMembers, "メンバー名簿"],
     [renderGalleryManagement, "フォトギャラリー管理"],
@@ -3131,6 +3131,7 @@ function renderEventPage() {
       <button class="btn btn-secondary" id="goTt"><span>タイムテーブル</span><small>出演スケジュール</small></button>
       <button class="btn btn-secondary" id="goShifts"><span>シフト</span><small>スタッフ配置・勤務時間</small></button>
       <button class="btn btn-secondary" id="goGallery"><span>フォトギャラリー管理</span><small>写真の追加・削除・並べ替え</small></button>
+      <button class="btn btn-secondary" id="goMessages"><span>お知らせ・スレッド</span><small>来場者アプリへの投稿・通知</small></button>
     </div>
 
     <div class="card"><div class="card-title">参加予定メンバー</div><div class="sub-text">${(ev.participants||[]).length}名登録</div><div class="participant-home-list">${(ev.participants||[]).map(id=>{const m=(db.members||[]).find(x=>x.id===id);const done=(state.receptionHistory||[]).some(r=>(r.guests||[]).some(g=>g.type==="tmp"&&(g.memberId===id||(!g.memberId&&g.name===m?.name))));return `<span>${esc(m?memberDisplayName(m):"名簿から削除済み")} <b class="${done?"checked":"pending"}">${done?"受付済み":"未受付"}</b></span>`}).join("")||`<span class="sub-text">参加予定はまだ登録されていません。</span>`}</div></div>
@@ -3149,6 +3150,7 @@ function renderEventPage() {
   document.getElementById("editEv").onclick = () => navigate(renderEventEdit);
   document.getElementById("editPricing").onclick = () => navigate(renderEventPricing);
   document.getElementById("goGallery").onclick = () => navigate(renderGalleryManagement);
+  document.getElementById("goMessages").onclick = () => navigate(renderEventMessages);
   const sv = document.getElementById("saveEv");
   if (sv) sv.onclick = () => { if (confirm("変更を保存しますか？")) { commitCtx(); renderEventPage(); updateBackButton(); } };
   document.getElementById("arcEv").onclick = () => {
@@ -3169,6 +3171,14 @@ function renderEventPage() {
   };
 }
 
+
+async function renderEventMessages() {
+  const ev=ctx?.ev; if(!ev){navigate(renderEventList);return;}
+  screen.innerHTML=`<div class="card"><div class="card-title">来場者へのお知らせ</div><p class="sub-text">投稿は来場者アプリに表示されます。通知を許可したユーザーにはプッシュ通知も送信します。</p><textarea id="announcementText" maxlength="2000" rows="5" placeholder="お知らせを入力してください"></textarea><label class="check-row"><input id="announcementNotify" type="checkbox" checked> プッシュ通知も送信する</label><button class="btn btn-primary" id="publishAnnouncement">投稿する</button></div><div class="card"><div class="card-title">投稿済みスレッド</div><div id="adminMessageList">読み込み中…</div></div><button class="btn btn-secondary" id="messagesBack">イベントホームへ戻る</button>`;
+  const load=async()=>{const host=document.getElementById('adminMessageList');try{const r=await fetch(`/api/public/messages?eventId=${encodeURIComponent(ev.id)}`,{cache:'no-store'});if(!r.ok)throw new Error();const rows=await r.json();host.innerHTML=rows.length?rows.slice().reverse().map(m=>`<article class="thread-message"><div class="thread-message-meta"><strong>運営</strong><time>${new Date(m.createdAt).toLocaleString('ja-JP')}</time></div><p>${esc(m.text).replace(/\n/g,'<br>')}</p><small>リアクション ${Object.values(m.reactions||{}).reduce((n,v)=>n+Number(v||0),0)}件</small></article>`).join(''):'<p class="sub-text">投稿はまだありません。</p>';}catch{host.textContent='投稿を読み込めませんでした。';}};
+  document.getElementById('publishAnnouncement').onclick=async()=>{const text=document.getElementById('announcementText').value.trim();if(!text){alert('投稿内容を入力してください。');return;}const btn=document.getElementById('publishAnnouncement');btn.disabled=true;try{const r=await fetch('/api/admin/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({eventId:ev.id,text,notify:document.getElementById('announcementNotify').checked})});const data=await r.json();if(!r.ok)throw new Error(data.error||'投稿に失敗しました');document.getElementById('announcementText').value='';alert(data.push?.configured?`投稿しました。通知送信数：${data.push.sent}`:'投稿しました。プッシュ通知のVAPID設定は未完了です。');await load();}catch(e){alert(e.message||'投稿に失敗しました。');}finally{btn.disabled=false;}};
+  document.getElementById('messagesBack').onclick=()=>navigate(renderEventPage); await load();
+}
 
 function renderGalleryManagement() {
   const ev = ctx?.ev;
@@ -3548,6 +3558,9 @@ function renderEventEdit() {
     <div class="card-title">回の情報を編集</div>
     <div class="form-row"><label>イベント名</label><input id="evName" value="${esc(ev.name)}"></div>
     <div class="form-row"><label>開催日</label><input id="evDate" type="date" value="${esc(ev.date)}"></div>
+    <div class="form-row"><label>会場名</label><input id="evVenue" maxlength="120" value="${esc(ev.venue||"")}" placeholder="会場名を入力"></div>
+    <div class="form-row"><label>GoogleマップURL</label><input id="evMapUrl" type="url" maxlength="500" value="${esc(ev.mapUrl||"https://maps.app.goo.gl/7ncCUVbzojuKphd37")}" placeholder="https://maps.app.goo.gl/..."></div>
+    <div class="form-row"><label>イベント説明</label><textarea id="evDescription" maxlength="2000">${esc(ev.description||"")}</textarea></div>
     <div class="form-row"><label>フライヤーを変更</label><input id="evFlyer" type="file" accept="image/*"></div>
     <button class="btn btn-primary" id="saveMeta">保存</button></div>`;
   document.getElementById("saveMeta").onclick = async () => {
@@ -3555,7 +3568,10 @@ function renderEventEdit() {
     const date = document.getElementById("evDate").value;
     if (!name || !date) { alert("イベント名と開催日を入力してください"); return; }
     if (ctx.mode === "archive" && !confirm("変更を保存しますか？")) return;
-    ev.name = name; ev.date = date; ev.u.meta = Date.now();
+    ev.name = name; ev.date = date; ev.venue = document.getElementById("evVenue").value.trim();
+    const mapUrl = document.getElementById("evMapUrl").value.trim();
+    if (mapUrl && !/^https:\/\//i.test(mapUrl)) { alert("GoogleマップURLはhttps://から始まるURLを入力してください。"); return; }
+    ev.mapUrl = mapUrl; ev.description = document.getElementById("evDescription").value.trim(); ev.u.meta = Date.now();
     const f = document.getElementById("evFlyer").files[0];
     if (f) await uploadFlyer(ev, f);
     persistDb();
@@ -4552,7 +4568,7 @@ function initApp() {
 
 function renderAdminLogin(message = "") {
   screen.innerHTML = `<section class="admin-login-wrap"><form class="admin-login-card" id="adminLoginForm">
-    <h2>管理者ログイン</h2>
+    <div class="admin-login-mark">tonight!</div><h2>管理者ログイン</h2>
     <p>管理画面を利用するにはパスワードを入力してください。</p>
     <label for="adminPassword">管理者パスワード</label>
     <input id="adminPassword" name="password" type="password" autocomplete="current-password" required maxlength="256" placeholder="パスワード">
@@ -4585,6 +4601,7 @@ async function startSecureAdminApp() {
     const response = await fetch("/api/auth/session", { cache: "no-store", credentials: "same-origin" });
     if (response.ok) {
       logoutButton.hidden = false;
+      const visitorLink = document.getElementById("visitorAppLink"); if (visitorLink) visitorLink.hidden = false;
       logoutButton.addEventListener("click", async () => {
         logoutButton.disabled = true;
         try { await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" }); } finally { location.reload(); }
